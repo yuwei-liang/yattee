@@ -18,7 +18,7 @@
 	<string>$(TeamIdentifierPrefix)$(CFBundleIdentifier)</string>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.stream.yattee.app.shared</string>
+		<string>group.com.yuweiliang.yattee.shared</string>
 	</array>
 </dict>
 </plist>

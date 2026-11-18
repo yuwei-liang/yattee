@@ -28,12 +28,20 @@ enum SubtitleFont: String, Codable, Hashable, Sendable, CaseIterable {
     }
 
     /// MPV font name for this font option.
+    ///
+    /// libass looks fonts up through CoreText, which has no family named
+    /// "sans-serif" or "serif"; with those names CJK text rendered as boxes.
+    /// Use real system families that cover Chinese as well as Latin.
     var mpvFontName: String {
         switch self {
         case .sansSerif:
-            return "sans-serif"
+            return "PingFang SC"
         case .serif:
-            return "serif"
+            #if os(macOS)
+            return "Songti SC"
+            #else
+            return "PingFang SC"  // iOS/tvOS ship no serif CJK family by default
+            #endif
         case .monospaced:
             return "monospace"
         }
