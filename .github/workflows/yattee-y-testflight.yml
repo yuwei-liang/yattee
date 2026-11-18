@@ -1,0 +1,91 @@
+# Build Yattee Y (this fork) for iOS and upload it to TestFlight, internal testing only.
+#
+# Signing is Xcode's automatic, cloud-managed signing driven by an App Store Connect
+# API key (team 234Y5MB95R), so no certificates or profiles live in this repo.
+# Secrets: ASC_KEY_P8 (the .p8 contents), ASC_KEY_ID, ASC_ISSUER_ID.
+name: Yattee Y → TestFlight
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [yuwei]
+
+concurrency:
+  group: yattee-y-testflight
+  cancel-in-progress: false
+
+jobs:
+  ios:
+    # Only this fork's owner can trigger a signed build; forks and PRs never see the key.
+    if: github.repository == 'yuwei-liang/yattee' && github.actor == 'yuwei-liang'
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 27.2
+        # App Store Connect rejects uploads built with a beta Xcode; prefer 27.2 (RC or release).
+        run: |
+          ls -d /Applications/Xcode*.app
+          XCODE=$(ls -d /Applications/Xcode_27.2*.app 2>/dev/null | sort -V | tail -n 1)
+          [ -n "$XCODE" ] || XCODE=$(ls -d /Applications/Xcode_27*.app | sort -V | tail -n 1)
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - name: Write API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          echo "KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+          echo "ARCHIVE=$RUNNER_TEMP/YatteeY.xcarchive" >> "$GITHUB_ENV"
+          umask 077
+          printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+
+      - name: Set build number
+        run: |
+          BUILD=$((1000 + GITHUB_RUN_NUMBER))
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*/CURRENT_PROJECT_VERSION = $BUILD/" Yattee.xcodeproj/project.pbxproj
+          echo "Build number $BUILD"
+
+      - name: Archive
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project Yattee.xcodeproj -scheme Yattee -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$ARCHIVE" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
+            | tail -n 200
+
+      - name: Upload to TestFlight
+        run: |
+          set -o pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>234Y5MB95R</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>testFlightInternalTestingOnly</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE" -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
+            | tail -n 100
+
+      - name: Remove API key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/AuthKey.p8"
