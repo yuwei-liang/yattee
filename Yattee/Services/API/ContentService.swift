@@ -66,7 +66,7 @@ actor ContentService: ContentServiceProtocol {
     }
 
     /// Returns a YatteeServerAPI configured for the instance's SSL and auth requirements.
-    private func yatteeServerAPI(for instance: Instance) async -> YatteeServerAPI {
+    func yatteeServerAPI(for instance: Instance) async -> YatteeServerAPI {
         if let authClient = await httpClientWithBasicAuth(for: instance) {
             return YatteeServerAPI(httpClient: authClient)
         }

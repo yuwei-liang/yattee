@@ -457,6 +457,53 @@ struct HomeView: View {
     @ViewBuilder
     private var homeContent: some View {
         #if !os(tvOS)
+        // Yattee Y: with a Yattee Server enabled, home is the recommendation feed.
+        if appEnvironment?.instancesManager.enabledYatteeServerInstances.isEmpty == false {
+            yatteeYHomeContent
+        } else {
+            defaultHomeContent
+        }
+        #else
+        defaultHomeContent
+        #endif
+    }
+
+    #if !os(tvOS)
+    @ViewBuilder
+    private var yatteeYHomeContent: some View {
+        HomeChipsRow(chips: [
+            HomeChip(id: "continue", title: "继续观看", systemImage: "play.circle", count: continueWatchingCount) {
+                appEnvironment?.navigationCoordinator.navigate(to: .continueWatching)
+            },
+            HomeChip(id: "bookmarks", title: "书签", systemImage: "bookmark", count: bookmarksCount) {
+                appEnvironment?.navigationCoordinator.navigate(to: .bookmarks)
+            },
+            HomeChip(id: "history", title: "历史", systemImage: "clock") {
+                appEnvironment?.navigationCoordinator.navigate(to: .history)
+            },
+            HomeChip(id: "downloads", title: "下载", systemImage: "arrow.down.circle") {
+                appEnvironment?.navigationCoordinator.navigate(to: .downloads)
+            },
+            HomeChip(id: "openLink", title: "打开链接", systemImage: "link") {
+                presentAppSheet(.openLink(nil))
+            },
+            HomeChip(id: "remote", title: "遥控", systemImage: "dot.radiowaves.left.and.right") {
+                showingRemoteControl = true
+            },
+        ])
+
+        if !recentContinueWatching.isEmpty {
+            continueWatchingSection
+                .padding(.bottom, 12)
+        }
+
+        RecommendedFeedSection()
+    }
+    #endif
+
+    @ViewBuilder
+    private var defaultHomeContent: some View {
+        #if !os(tvOS)
         if hasVisibleShortcuts {
             shortcutsSection
         }

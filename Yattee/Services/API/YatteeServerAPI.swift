@@ -12,7 +12,7 @@
 /// Yattee Server API client for fetching YouTube content.
 /// Uses Invidious-compatible JSON format for responses.
 actor YatteeServerAPI: InstanceAPI {
-    private let httpClient: HTTPClient
+    let httpClient: HTTPClient
 
     init(httpClient: HTTPClient) {
         self.httpClient = httpClient
