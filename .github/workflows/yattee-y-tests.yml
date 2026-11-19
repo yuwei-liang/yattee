@@ -1,4 +1,5 @@
-# Run the unit test suite (Swift Testing) on macOS for every push to the fork.
+# Run the unit test suite (Swift Testing) in the iOS Simulator for every push to the fork.
+# (Unsigned macOS test hosts crash at launch: the app needs iCloud/app-group entitlements.)
 name: Yattee Y tests
 
 on:
@@ -26,6 +27,8 @@ jobs:
       - name: Test
         run: |
           set -o pipefail
-          xcodebuild test -project Yattee.xcodeproj -scheme Yattee -destination 'platform=macOS' \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" \
+          SIM=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if 'iPhone' in x['name']))")
+          echo "Simulator $SIM"
+          xcodebuild test -project Yattee.xcodeproj -scheme Yattee -destination "id=$SIM" \
+            CODE_SIGNING_ALLOWED=NO \
             | grep -E "✔|✘|Test run|error:|failed|passed|TEST (SUCCEEDED|FAILED)" | tail -n 300

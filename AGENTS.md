@@ -79,7 +79,7 @@ Personal fork built for one person's iPhone/iPad/Mac. Keep changes small and in 
 **Builds need Xcode 27** (upstream uses iOS 27 SDK APIs); the owner's Mac has Xcode 26, so build, test and ship on GitHub Actions (`runs-on: xcode-27`, free for this public repo):
 - `.github/workflows/yattee-y-testflight.yml` — every push to `yuwei` archives iOS and uploads to TestFlight (internal group "Me", automatic distribution). Add `[skip ci]` to commit messages that don't need a build.
 - `.github/workflows/yattee-y-dev-ipa.yml` — manual; development-signed IPA with `YATTEE_DEV_LOG` (mpv log + font report to `Documents/dev.log`) for registered test devices. Install: `xcrun devicectl device install app --device <id> <ipa>`; read logs: `xcrun devicectl device copy from --device <id> --domain-type appDataContainer --domain-identifier com.yuweiliang.yattee --source Documents/dev.log --destination .`
-- `.github/workflows/yattee-y-tests.yml` — `xcodebuild test` on macOS, on every push.
+- `.github/workflows/yattee-y-tests.yml` — `xcodebuild test` in the iOS Simulator (unsigned macOS hosts crash), on every push.
 Signing is Xcode automatic signing with an App Store Connect API key in repo secrets (`ASC_KEY_P8`, `ASC_KEY_ID`, `ASC_ISSUER_ID`); no certificates in the repo. Never print or commit the key.
 
 **CloudKit schema:** `cloudkit/schema.ckdb` mirrors `CloudKitRecordMapper`. TestFlight builds use the Production environment, which does not create fields on the fly: when you add a record type or field, update the file, import it into Development in the CloudKit Console, then "Deploy Schema Changes" to Production — before shipping the build that writes it.
