@@ -77,3 +77,23 @@ struct TapBehaviorTests {
         #expect(SettingsManager().textAreaTapAction == .playVideo)
     }
 }
+
+// MARK: - Watch Progress
+
+@Suite("Watch Progress")
+@MainActor
+struct WatchProgressTests {
+
+    @Test("Watching a finished video again puts it back in Continue Watching")
+    func rewatchClearsFinished() {
+        let entry = WatchEntry(
+            videoID: "rewatch", sourceRawValue: "youtube", title: "T",
+            authorName: "C", authorID: "c", duration: 100
+        )
+        entry.updateProgress(seconds: 95)
+        #expect(entry.isFinished)
+        entry.updateProgress(seconds: 20)
+        #expect(!entry.isFinished)
+        #expect(entry.finishedAt == nil)
+    }
+}

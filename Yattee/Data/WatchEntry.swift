@@ -179,6 +179,10 @@ final class WatchEntry {
         if progress >= 0.9 && !isFinished {
             isFinished = true
             finishedAt = Date()
+        } else if progress < 0.9 && isFinished {
+            // Yattee Y: watching again (or a false finish) puts it back in Continue Watching.
+            isFinished = false
+            finishedAt = nil
         }
     }
 

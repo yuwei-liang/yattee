@@ -150,6 +150,11 @@ final class PlayerService {
     /// Used to prevent saving progress when switching to next video after natural completion.
     private var videoEndedNaturally = false
 
+    /// Yattee Y: how often each video's stream was refreshed after ending early,
+    /// so a stream that keeps cutting out cannot loop forever.
+    private var earlyEndRefreshes: [String: Int] = [:]
+    private static let maxEarlyEndRefreshes = 2
+
     /// Bumped every time the playback identity changes hands: a load claiming
     /// the player, or a teardown clearing it. Work that suspends mid-playback
     /// captures it and compares on the way back, so a continuation belonging to
@@ -3157,6 +3162,19 @@ extension PlayerService: PlayerBackendDelegate {
     }
 
     func backendDidFinishPlaying(_ backend: any PlayerBackend) {
+        // Yattee Y: a dropped stream (proxy hiccup, network change while asleep) can read
+        // as end-of-file well before the real end. Refresh instead of marking it watched.
+        if !state.isLive, state.duration > 0, state.currentTime < state.duration - 10,
+           let videoID = state.currentVideo?.id.videoID,
+           earlyEndRefreshes[videoID, default: 0] < Self.maxEarlyEndRefreshes {
+            earlyEndRefreshes[videoID, default: 0] += 1
+            LoggingService.shared.warning(
+                "Playback ended at \(Int(state.currentTime))s of \(Int(state.duration))s; refreshing stream",
+                category: .player)
+            self.backend(backend, didRequestStreamRefresh: state.currentTime)
+            return
+        }
+
         // Mark that video ended naturally - prevents play() from saving progress again
         // when switching to next video (100% is already saved below)
         videoEndedNaturally = true
