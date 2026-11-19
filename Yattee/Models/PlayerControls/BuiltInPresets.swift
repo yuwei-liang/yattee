@@ -11,7 +11,7 @@ extension LayoutPreset {
     /// Bump this version whenever any built-in preset definition changes.
     /// On launch, the app compares this against the last-applied version
     /// and replaces stale built-in presets with fresh copies from code.
-    static let builtInPresetsVersion = 10
+    static let builtInPresetsVersion = 11  // Yattee Y: CC, quality, 详情/评论 buttons
 
     // MARK: - Built-in Preset IDs
 
