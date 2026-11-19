@@ -11,13 +11,15 @@ Yattee Y 是 Yuwei 自用的 Yattee 分支：配合自家 NAS 上的 Yattee Serv
 - 一键添加源：`yattee://add-source` 链接，账号密码直接进钥匙串，从 Mac 用 devicectl 发到手机。
 - **中文字幕不再是方块**：打包 Noto Sans SC（iOS 系统中文字体在沙盒外读不到）。XR 实机验证通过。
 - 服务器：推荐反馈接口（多来点这种 / 顺着这个深挖 / 不感兴趣 / 别再推这个频道），反馈写进 Claude 挑片的提示。
-- AGENTS.md 分支说明；分支测试 `YatteeTests/YatteeYTests.swift`。
+- AGENTS.md 分支说明；分支测试 `YatteeTests/YatteeYTests.swift`；CI 测试转绿（失败自动重跑一次）；固定开发证书，不再每次新建。
+- **首页 = 推荐**：理由常显、「接着看」在上、小标签、刷到底「换一批」；反馈直达 Claude。
+- **点视频任何地方都直接播放**，详情在长按菜单。
+- **unspin**：长按 / ⋯ 菜单提交 → NAS 排队 → Mac 定时任务跑分析 → 报告放在 NAS（tailnet 内可看）→ Telegram + app 内「unspin」列表。
+- 以上在 TestFlight build 1006（2026-11-18）。
 
 ## 进行中
 
-- **首页 = 推荐**（设计稿 v1，已定）：理由一直显示；「接着看」放推荐上面；大方块换成一排小标签（打开链接、遥控放在小标签最后）；刷到底「换一批」。代码已写好，等 XR 试用。
-- **点视频任何地方都直接播放**（和 YouTube 一样），详情从长按菜单打开。Apple TV 不变。
-- **CI 测试转绿**：模拟器里 1087 个通过、1 个上游时间敏感测试偶发失败（`AccountsManagerTests/unreachableStatusExpires`），已改为失败自动重跑一次。
+（暂无）
 
 ## 需求探讨 1（2026-11-18）
 
@@ -28,7 +30,6 @@ Yattee Y 是 Yuwei 自用的 Yattee 分支：配合自家 NAS 上的 Yattee Serv
 
 ## 接下来（按优先级）
 
-- P1 **「用 unspin 分析」**：播放页和 ⋯ 菜单一键提交 → 服务器排队 → 家里的机器跑 unspin（YouTube 只认家里 IP）→ 报告链接推回来。已定（2026-11-18）：结果同时发 Telegram（经 Bear）和 app 内「unspin 报告」列表；分析在 Mac 上用 Claude Code（订阅额度）无界面跑，Mac 关机时任务排着等。
 - P1 回传真实观看时长和完成度，让推荐学得更准。
 - P2 收藏分类：书签已有标签字段，做按主题分组的书签页、加书签时一键选标签。
 - P2 Mac 版（TestFlight macOS）和 Apple TV 版 Yattee Y；Apple TV 目前还在用官方版。
@@ -39,7 +40,12 @@ Yattee Y 是 Yuwei 自用的 Yattee 分支：配合自家 NAS 上的 Yattee Serv
 ## 想法池（待挑）
 
 - 推荐自动连播：看完自动接推荐流的下一条（睡前刷）。
-- 睡眠定时器：N 分钟后停 / 播完这条就停（可参考 7inh/yattee 的 On-the-go 面板）。
+- 睡眠定时器：5–60 分钟或「播完这条」，按真实时间计（7inh `5fd6c3d5d`，约 190 行，界面要自己做）。锁屏 / 灵动岛上设定时（7inh `2e3069196`，要新加一个扩展，工作量大）。
+- 断流不算看完：提前 10 秒以上结束就重新拉流，不标已看（michaelhalstead `9a062a530`，约 10 行，要加重试上限）。
+- 同步字幕稿：字幕像歌词一样滚动高亮，半听时边听边看（7inh `6365f68da`，先确认服务器的字幕接口）。
+- 打开 app 恢复上次的视频，暂停在原位置（7inh `0297b36f2`、`9da90dfc0`）。
+- 锁屏 / AirPods 快进秒数跟随设置（7inh `71af6a744`）；记住播放速度（7inh `42dfa8762`）。
+- 音轨标原声 / 人工配音 / AI 配音（7inh `3d88ce938`，要确认服务器代理的流还带这些标签）。
 - 中文字幕自动打开：人工中文 > 自动中文 > 英文。
 - 中英双语字幕；视频页 Claude 摘要和要点。
 - 底部标签精简：Sources 挪进设置，只留首页 / 订阅 / 下载 / 搜索。
