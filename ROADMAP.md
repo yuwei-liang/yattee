@@ -28,7 +28,7 @@ Yattee Y 是 Yuwei 自用的 Yattee 分支：配合自家 NAS 上的 Yattee Serv
 
 ## 接下来（按优先级）
 
-- P1 **「用 unspin 分析」**：播放页和 ⋯ 菜单一键提交 → 服务器排队 → 家里的机器跑 unspin（YouTube 只认家里 IP）→ 报告链接推回来。推回方式待定（Telegram / app 内）。
+- P1 **「用 unspin 分析」**：播放页和 ⋯ 菜单一键提交 → 服务器排队 → 家里的机器跑 unspin（YouTube 只认家里 IP）→ 报告链接推回来。已定（2026-11-18）：结果同时发 Telegram（经 Bear）和 app 内「unspin 报告」列表；分析在 Mac 上用 Claude Code（订阅额度）无界面跑，Mac 关机时任务排着等。
 - P1 回传真实观看时长和完成度，让推荐学得更准。
 - P2 收藏分类：书签已有标签字段，做按主题分组的书签页、加书签时一键选标签。
 - P2 Mac 版（TestFlight macOS）和 Apple TV 版 Yattee Y；Apple TV 目前还在用官方版。
