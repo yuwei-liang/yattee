@@ -115,7 +115,7 @@ struct RecommendedFeedSection: View {
                 }
                 Spacer(minLength: 0)
                 Menu {
-                    ForEach(Array(feedbackActions(for: video).enumerated()), id: \.offset) { _, action in
+                    ForEach(Array(menuActions(for: video).enumerated()), id: \.offset) { _, action in
                         Button(role: action.role, action: action.action) {
                             Label(action.label, systemImage: action.systemImage)
                         }
@@ -191,6 +191,12 @@ struct RecommendedFeedSection: View {
             VideoContextAction("不感兴趣", systemImage: "hand.thumbsdown") { beginDismiss(video) },
             VideoContextAction("别再推这个频道", systemImage: "person.crop.circle.badge.xmark", role: .destructive) { blockChannel(of: video) },
         ]
+    }
+
+    /// The card's ⋯ menu: unspin first (as in the design), then the feedback actions.
+    private func menuActions(for video: Video) -> [VideoContextAction] {
+        [VideoContextAction("用 unspin 分析", systemImage: "scope") { UnspinSubmitter.submit(video, in: appEnvironment) }]
+            + feedbackActions(for: video)
     }
 
     private func load() async {

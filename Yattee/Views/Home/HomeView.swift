@@ -40,6 +40,10 @@ struct HomeView: View {
     #endif
     @State private var showingRemoteControl = false
     @State private var showingCustomizeHome = false
+    #if !os(tvOS)
+    @State private var showingUnspinReports = false   // Yattee Y
+    @State private var unspinActiveCount = 0          // Yattee Y
+    #endif
     @State private var channelsCount: Int = 0
     @State private var discoveredDevicesCount: Int = 0
     @State private var feedCache = SubscriptionFeedCache.shared
@@ -481,6 +485,9 @@ struct HomeView: View {
             HomeChip(id: "history", title: "历史", systemImage: "clock") {
                 appEnvironment?.navigationCoordinator.navigate(to: .history)
             },
+            HomeChip(id: "unspin", title: "unspin", systemImage: "scope", count: unspinActiveCount) {
+                showingUnspinReports = true
+            },
             HomeChip(id: "downloads", title: "下载", systemImage: "arrow.down.circle") {
                 appEnvironment?.navigationCoordinator.navigate(to: .downloads)
             },
@@ -498,6 +505,16 @@ struct HomeView: View {
         }
 
         RecommendedFeedSection()
+            .sheet(isPresented: $showingUnspinReports, onDismiss: { Task { await refreshUnspinCount() } }) {
+                UnspinReportsView()
+            }
+            .task { await refreshUnspinCount() }
+    }
+
+    private func refreshUnspinCount() async {
+        guard let appEnvironment, let server = appEnvironment.instancesManager.enabledYatteeServerInstances.first,
+              let jobs = try? await appEnvironment.contentService.unspinJobs(instance: server) else { return }
+        unspinActiveCount = jobs.filter(\.isActive).count
     }
     #endif
 

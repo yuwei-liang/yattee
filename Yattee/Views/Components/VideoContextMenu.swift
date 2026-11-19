@@ -379,6 +379,15 @@ struct VideoContextMenuContent: View {
 
         Divider()
 
+        // Yattee Y: send to unspin for argument analysis
+        if UnspinSubmitter.canSubmit(video, in: appEnvironment) {
+            Button {
+                UnspinSubmitter.submit(video, in: appEnvironment)
+            } label: {
+                Label("用 unspin 分析", systemImage: "scope")
+            }
+        }
+
         // Video Info
         Button {
             // Collapses the expanded player (also for related/queue rows
