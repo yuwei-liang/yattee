@@ -89,6 +89,15 @@ struct PlaybackCommands: Commands {
             
             Divider()
             closeVideoButton
+
+            #if os(macOS)
+            Divider()
+            Button("键盘快捷键") {
+                YatteeYPlayerExtras.shared.showsShortcuts.toggle()
+            }
+            .keyboardShortcut("/", modifiers: [.command])
+            .disabled(!hasActiveVideo)
+            #endif
         }
     }
 

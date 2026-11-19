@@ -23,6 +23,9 @@ final class YatteeYPlayerExtras {
     /// Comments float over the right side of the video.
     var showsCommentsOverlay = false
 
+    /// The keyboard shortcut sheet over the video (? or ⌘/).
+    var showsShortcuts = false
+
     private var environment: AppEnvironment { AppEnvironment.shared }
     private var player: PlayerService { environment.playerService }
 
@@ -314,6 +317,56 @@ struct YatteeYCommentsOverlay: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .transition(.move(edge: .trailing).combined(with: .opacity))
+        }
+    }
+}
+
+// MARK: - Keyboard shortcuts sheet
+
+struct YatteeYShortcutsOverlay: View {
+    private let extras = YatteeYPlayerExtras.shared
+
+    private static let rows: [(String, String)] = [
+        ("播放 / 暂停", "空格  K"),
+        ("后退 / 前进 10 秒", "←  →   J  L"),
+        ("后退 / 前进 30 秒", "⇧←  ⇧→"),
+        ("跳到 0%…90%", "0 … 9"),
+        ("逐帧（会暂停）", ",  ."),
+        ("减速 / 加速", "<  >"),
+        ("音量 / 静音", "↑  ↓   M"),
+        ("字幕开关", "S"),
+        ("评论浮在视频上", "C"),
+        ("小窗 ⇄ 详情和评论", "T"),
+        ("下一个视频", "N"),
+        ("全屏", "F"),
+        ("本页", "?"),
+    ]
+
+    var body: some View {
+        if extras.showsShortcuts {
+            ZStack {
+                Color.black.opacity(0.35)
+                    .contentShape(Rectangle())
+                    .onTapGesture { extras.showsShortcuts = false }
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("键盘快捷键").font(.headline)
+                    Grid(alignment: .leading, horizontalSpacing: 28, verticalSpacing: 6) {
+                        ForEach(Self.rows, id: \.0) { row in
+                            GridRow {
+                                Text(row.0).foregroundStyle(.secondary)
+                                Text(row.1).font(.system(.body, design: .monospaced).weight(.semibold))
+                            }
+                        }
+                    }
+                    Text("按 ? 或 Esc 关闭 · 菜单栏「播放」里还有带 ⌘ 的快捷键")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(20)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .environment(\.colorScheme, .dark)
+            }
+            .transition(.opacity)
         }
     }
 }

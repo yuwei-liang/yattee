@@ -350,6 +350,9 @@ struct MacOSPlayerControlsView: View {
                 }
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
+            // Yattee Y: keyboard shortcut sheet (? or ⌘/)
+            .overlay { YatteeYShortcutsOverlay() }
+            .animation(.easeInOut(duration: 0.15), value: YatteeYPlayerExtras.shared.showsShortcuts)
         }
         .background(
             HostWindowReader(window: $hostWindow)
@@ -632,6 +635,9 @@ struct MacOSPlayerControlsView: View {
 
             let isShiftHeld = event.modifierFlags.contains(.shift)
 
+            // Yattee Y: YouTube-style keys and the shortcut sheet.
+            if handleYatteeYKey(event) { return nil }
+
             // Handle keyboard shortcuts
             switch event.keyCode {
             case 49: // Space
@@ -714,6 +720,47 @@ struct MacOSPlayerControlsView: View {
                 return event // Pass through unhandled keys
             }
         }
+    }
+
+    /// Yattee Y keys, matched by the typed character so they follow the
+    /// keyboard layout. Returns true when the key was handled.
+    private func handleYatteeYKey(_ event: NSEvent) -> Bool {
+        let extras = YatteeYPlayerExtras.shared
+        if extras.showsShortcuts, event.keyCode == 53 {
+            extras.showsShortcuts = false
+            return true
+        }
+        guard let chars = event.characters, chars.count == 1 else { return false }
+        if extras.showsShortcuts, chars != "?" {
+            extras.showsShortcuts = false
+        }
+        switch chars {
+        case "?":
+            extras.showsShortcuts.toggle()
+        case "k", "K":
+            onPlayPause()
+        case "j", "J":
+            Task { await onSeekBackward(10) }
+        case "l", "L":
+            Task { await onSeekForward(10) }
+        case "n", "N":
+            guard let onPlayNext else { return false }
+            Task { await onPlayNext() }
+        case ",", ".":
+            (AppEnvironment.shared.playerService.currentBackend as? MPVBackend)?.frameStep(forward: chars == ".")
+        case "<", ">":
+            let rates = PlaybackRate.allCases
+            guard let index = rates.firstIndex(of: playerState.rate) else { return false }
+            let next = chars == ">" ? min(index + 1, rates.count - 1) : max(index - 1, 0)
+            onRateChanged?(rates[next])
+        case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9":
+            let duration = playerState.duration
+            guard duration > 0, let digit = Double(chars) else { return false }
+            Task { await onSeek(duration * digit / 10) }
+        default:
+            return false
+        }
+        return true
     }
 
     private func removeKeyboardMonitor() {

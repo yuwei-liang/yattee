@@ -798,6 +798,11 @@ final class MPVBackend: PlayerBackend {
         delegate?.backend(self, didChangeState: .idle)
     }
 
+    /// Yattee Y: step one frame forward or back (mpv pauses playback).
+    func frameStep(forward: Bool) {
+        mpvClient?.commandAsync([forward ? "frame-step" : "frame-back-step"])
+    }
+
     func prepareForInitialSeek() {
         // Signal that an initial seek will be performed after load completes.
         // This defers backendDidBecomeReady until the seek completes.
