@@ -48,9 +48,16 @@ struct SourceLinkTests {
 @Suite("Subtitle Fonts")
 struct SubtitleFontTests {
 
-    @Test("Text font options name real CJK-capable families")
+    @Test("Text font options use the bundled CJK font")
     func cjkFamilies() {
-        #expect(SubtitleFont.sansSerif.mpvFontName == "PingFang SC")
-        #expect(SubtitleFont.serif.mpvFontName != "serif")
+        #expect(SubtitleFont.sansSerif.mpvFontName == "Noto Sans SC")
+        #expect(SubtitleFont.serif.mpvFontName == "Noto Sans SC")
+    }
+
+    @Test("Bundled font is copied into its own fonts directory")
+    func fontsDirectory() throws {
+        let dir = try #require(SubtitleFonts.directory)
+        let files = try FileManager.default.contentsOfDirectory(atPath: dir)
+        #expect(files == ["NotoSansSC-Regular.otf"])
     }
 }

@@ -569,6 +569,15 @@ final class MPVClient: @unchecked Sendable {
         // User agent for HTTP requests - use the user's configured setting
         setOptionSync("user-agent", SettingsManager.currentUserAgent())
 
+        // Yattee Y: load the bundled CJK font; system CJK fonts are unreadable from the sandbox.
+        if let fontsDir = SubtitleFonts.directory {
+            setOptionSync("sub-fonts-dir", fontsDir)
+            setOptionSync("osd-fonts-dir", fontsDir)
+        }
+        #if YATTEE_DEV_LOG
+        DevFileLog.write("sub-fonts-dir = \(SubtitleFonts.directory ?? "nil")")
+        #endif
+
         // Apply subtitle appearance settings
         applySubtitleSettings()
 

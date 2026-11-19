@@ -86,5 +86,5 @@ Signing is Xcode automatic signing with an App Store Connect API key in repo sec
 
 **Fork features:**
 - `Yattee/Core/SourceLink.swift` — `yattee://add-source?url=&name=&proxy=1&user=&pass=` adds/updates a Yattee Server source and stores the login in the Keychain. Handled at the top of `onOpenURL`, before any logging. Deliver it to a device with `devicectl ... --payload-url`, never through chats or notes.
-- CJK subtitles: `SubtitleFont.mpvFontName` names real families (`PingFang SC`) because libass resolves fonts via CoreText. Under investigation: boxes still appear on device (2026-11-18).
+- CJK subtitles: iOS system CJK fonts live outside the sandbox (`/var/mobile/Library/UserFonts`), so libass cannot open them and draws boxes. We bundle Noto Sans SC (`Yattee/Resources/SubtitleFonts`, SIL OFL), copy it to Application Support at runtime and set `sub-fonts-dir`; `SubtitleFont` maps to it (`Services/Player/MPV/SubtitleFonts.swift`).
 - Tests for fork code live in `YatteeTests/YatteeYTests.swift`.
