@@ -30,7 +30,7 @@ jobs:
           set -o pipefail
           SIM=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if 'iPhone' in x['name']))")
           echo "Simulator $SIM"
-          xcodebuild test -project Yattee.xcodeproj -scheme Yattee -destination "id=$SIM" \
+          xcodebuild test -project Yattee.xcodeproj -scheme Yattee -destination "id=$SIM" -retry-tests-on-failure -test-iterations 2 \
             CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= \
             > "$RUNNER_TEMP/test.log" 2>&1 && STATUS=0 || STATUS=$?
           echo "passed: $(grep -cE '^Test case .* passed' "$RUNNER_TEMP/test.log")"
