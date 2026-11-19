@@ -13,6 +13,9 @@ import SwiftUI
 #if !os(tvOS)
 struct RecommendedFeedSection: View {
     @Environment(\.appEnvironment) private var appEnvironment
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    #endif
 
     @State private var videos: [Video] = []
     @State private var isLoading = false
@@ -42,12 +45,14 @@ struct RecommendedFeedSection: View {
             if videos.isEmpty {
                 placeholder
             } else {
-                ForEach(Array(videos.enumerated()), id: \.element.id.videoID) { index, video in
-                    if let state = dismissed[video.id.videoID] {
-                        dismissedCard(video: video, state: state)
-                    } else {
-                        feedCard(video: video, index: index)
-                    }
+                if usesGrid {
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 280), spacing: 20, alignment: .top)],
+                        alignment: .leading,
+                        spacing: 28
+                    ) { cards }
+                } else {
+                    cards
                 }
                 footer
             }
@@ -58,6 +63,28 @@ struct RecommendedFeedSection: View {
     }
 
     // MARK: - Pieces
+
+    /// Mac and wide iPad show the feed as a YouTube-style grid; iPhone keeps one column.
+    private var usesGrid: Bool {
+        #if os(macOS)
+        true
+        #elseif os(iOS)
+        horizontalSizeClass == .regular
+        #else
+        false
+        #endif
+    }
+
+    @ViewBuilder
+    private var cards: some View {
+        ForEach(Array(videos.enumerated()), id: \.element.id.videoID) { index, video in
+            if let state = dismissed[video.id.videoID] {
+                dismissedCard(video: video, state: state)
+            } else {
+                feedCard(video: video, index: index)
+            }
+        }
+    }
 
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
@@ -108,7 +135,8 @@ struct RecommendedFeedSection: View {
                     Label(why, systemImage: "sparkles")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.tint)
-                        .lineLimit(2)
+                        .lineLimit(usesGrid ? 1 : 2)
+                        .help(why)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
@@ -127,6 +155,11 @@ struct RecommendedFeedSection: View {
                         .frame(width: 32, height: 28)
                         .contentShape(Rectangle())
                 }
+                .menuIndicator(.hidden)
+                #if os(macOS)
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                #endif
                 .accessibilityLabel("推荐选项")
             }
         }
@@ -170,7 +203,7 @@ struct RecommendedFeedSection: View {
                     Task { await rebuild() }
                 } label: {
                     Label("换一批", systemImage: "arrow.clockwise")
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: usesGrid ? 320 : .infinity)
                 }
                 .buttonStyle(.bordered)
                 Text("让 Claude 马上重新挑一批")
