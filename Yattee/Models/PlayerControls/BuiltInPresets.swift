@@ -68,6 +68,8 @@ extension LayoutPreset {
                 visibilityMode: .wideOnly
             ),
             .flexibleSpacer(),
+            .defaultConfiguration(for: .captions),
+            .defaultConfiguration(for: .videoTrack),
             .defaultConfiguration(for: .settings),
             .defaultConfiguration(for: .pictureInPicture),
             .defaultConfiguration(for: .fullscreen)

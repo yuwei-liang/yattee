@@ -2,13 +2,13 @@
 //  YatteeYPlayerExtras.swift
 //  Yattee
 //
-//  Yattee Y: Mac player additions — one-click captions (CC) with a language
-//  menu, a quality menu, a "详情" toggle that shrinks the window to the video
-//  (small-window mode) or grows it back to the corner layout, and comments
-//  floating over the video.
+//  Yattee Y player additions — one-click captions (CC) with a language menu
+//  and a quality menu (iPhone and Mac); on the Mac also a "详情" toggle that
+//  shrinks the window to the video (small-window mode) or grows it back to the
+//  corner layout, and comments floating over the video.
 //
 
-#if os(macOS)
+#if os(iOS) || os(macOS)
 
 import SwiftUI
 
@@ -26,6 +26,7 @@ final class YatteeYPlayerExtras {
     private var environment: AppEnvironment { AppEnvironment.shared }
     private var player: PlayerService { environment.playerService }
 
+    #if os(macOS)
     // MARK: Small window
 
     /// Details and comments are shown beside the video (big window).
@@ -61,6 +62,7 @@ final class YatteeYPlayerExtras {
             showsCommentsOverlay.toggle()
         }
     }
+    #endif
 
     // MARK: Captions
 
@@ -148,7 +150,11 @@ final class YatteeYPlayerExtras {
     }
 }
 
-// MARK: - Control bar buttons
+#endif
+
+#if os(macOS)
+
+// MARK: - Control bar buttons (Mac)
 
 /// "CC" toggles subtitles; the small chevron opens the language list.
 struct YatteeYCaptionsButton: View {
