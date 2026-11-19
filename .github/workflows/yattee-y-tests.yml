@@ -32,4 +32,8 @@ jobs:
           echo "Simulator $SIM"
           xcodebuild test -project Yattee.xcodeproj -scheme Yattee -destination "id=$SIM" \
             CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= \
-            | grep -E "✔|✘|Test run|error:|failed|passed|TEST (SUCCEEDED|FAILED)" | tail -n 300
+            > "$RUNNER_TEMP/test.log" 2>&1 && STATUS=0 || STATUS=$?
+          echo "passed: $(grep -cE '^Test case .* passed' "$RUNNER_TEMP/test.log")"
+          echo "failed: $(grep -cE '^Test case .* failed' "$RUNNER_TEMP/test.log")"
+          grep -E "^Test case .* failed|error:|Expectation failed|crashed|TEST (SUCCEEDED|FAILED)" "$RUNNER_TEMP/test.log" | head -n 200
+          exit $STATUS
