@@ -13,7 +13,7 @@ Yattee Y 是 Yuwei 自用的 Yattee 分支：配合自家 NAS 上的 Yattee Serv
 
 ## 进行中
 
-- **中文字幕方块**：原因已找到——iOS 的苹方字体在沙盒外，mpv/libass 读不到文件。方案：打包 Noto Sans SC，用 `sub-fonts-dir` 加载。已打包 Noto Sans SC（2026-11-18），待 XR 实机验证。
+- **中文字幕方块**：原因已找到——iOS 的苹方字体在沙盒外，mpv/libass 读不到文件。方案：打包 Noto Sans SC，用 `sub-fonts-dir` 加载。已打包 Noto Sans SC，2026-11-18 在 XR 上实机验证通过。
 - **首页 = 推荐**：设计稿 v1 已出（推荐流 + 「为什么推荐」+ ⋮ 菜单 + 不感兴趣可撤销）。待定：理由是否常显、「接着看」位置、旧快捷方块怎么处理、刷到底「换一批」还是「今天就这些」。
 - **CI 测试转绿**：改用 iOS 模拟器跑（macOS 未签名会崩）。
 
