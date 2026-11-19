@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32 82)" fill="black">
+<path fill-rule="evenodd" d="M150 360c40 10 80 40 110 90 20-10 50-15 70-10 60-90 170-140 290-140 170 0 270 110 270 230 0 110-90 190-230 190H360c-120 0-190-60-200-140-40 20-90 20-130 0 40-30 70-70 80-110-20-40-10-80 40-110zM520 430l150 90-150 90z"/>
+<circle cx="690" cy="230" r="26"/><circle cx="740" cy="190" r="20"/><circle cx="640" cy="190" r="18"/>
+</g>
+</svg>
