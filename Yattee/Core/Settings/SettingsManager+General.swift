@@ -655,13 +655,14 @@ extension SettingsManager {
         }
     }
 
-    /// Action to perform when tapping on video text area (title/author/metadata). Default is openInfo.
+    /// Action to perform when tapping on video text area (title/author/metadata).
+    /// Yattee Y: default is playVideo, like YouTube (info stays in the context menu).
     var textAreaTapAction: VideoTapAction {
         get {
             if let cached = _textAreaTapAction { return cached }
             guard let rawValue = localDefaults.string(forKey: "textAreaTapAction"),
                   let action = VideoTapAction(rawValue: rawValue) else {
-                return .openInfo
+                return .playVideo
             }
             return action
         }

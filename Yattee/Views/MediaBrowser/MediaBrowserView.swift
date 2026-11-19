@@ -432,7 +432,7 @@ struct MediaBrowserView: View {
             textAreaModifier: { view in
                 AnyView(
                     view.mediaFileRegionTap(
-                        action: appEnvironment?.settingsManager.textAreaTapAction ?? .openInfo,
+                        action: appEnvironment?.settingsManager.textAreaTapAction ?? .playVideo,
                         onPlay: { playFile(file) },
                         onOpenInfo: { openInfo(for: file) }
                     )

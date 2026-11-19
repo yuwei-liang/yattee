@@ -68,7 +68,7 @@ struct VideoRowView: View {
     }
     
     private var textAreaTapAction: VideoTapAction {
-        appEnvironment?.settingsManager.textAreaTapAction ?? .openInfo
+        appEnvironment?.settingsManager.textAreaTapAction ?? .playVideo
     }
     #endif
 

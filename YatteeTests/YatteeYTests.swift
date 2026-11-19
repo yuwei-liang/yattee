@@ -61,3 +61,19 @@ struct SubtitleFontTests {
         #expect(files == ["NotoSansSC-Regular.otf"])
     }
 }
+
+// MARK: - Tap Behavior
+
+@Suite("Tap Behavior")
+@MainActor
+struct TapBehaviorTests {
+
+    @Test("Tapping a video's title plays it by default, like YouTube")
+    func textAreaDefaultsToPlay() {
+        let defaults = UserDefaults.standard
+        let saved = defaults.object(forKey: "textAreaTapAction")
+        defaults.removeObject(forKey: "textAreaTapAction")
+        defer { if let saved { defaults.set(saved, forKey: "textAreaTapAction") } }
+        #expect(SettingsManager().textAreaTapAction == .playVideo)
+    }
+}
