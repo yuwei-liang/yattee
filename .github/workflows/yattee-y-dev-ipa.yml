@@ -21,6 +21,26 @@ jobs:
           sudo xcode-select -s "$XCODE/Contents/Developer"
           xcodebuild -version
 
+      - name: Install signing certificate
+        # One fixed Apple Development certificate from secrets, so automatic signing
+        # does not mint a new certificate on every fresh runner (Apple caps them).
+        env:
+          DEV_CERT_P12: ${{ secrets.DEV_CERT_P12 }}
+          DEV_CERT_PASSWORD: ${{ secrets.DEV_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/ci.keychain-db"
+          KPW=$(openssl rand -hex 12)
+          security create-keychain -p "$KPW" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KPW" "$KEYCHAIN"
+          printf '%s' "$DEV_CERT_P12" | base64 --decode > "$RUNNER_TEMP/ci.p12"
+          security import "$RUNNER_TEMP/ci.p12" -P "$DEV_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          rm -f "$RUNNER_TEMP/ci.p12"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KPW" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          security find-identity -v -p codesigning "$KEYCHAIN" | grep -q "Apple Development" || { echo "certificate import failed"; exit 1; }
+          echo "KEYCHAIN_PATH=$KEYCHAIN" >> "$GITHUB_ENV"
+
       - name: Write API key
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
@@ -76,3 +96,7 @@ jobs:
       - name: Remove API key
         if: always()
         run: rm -f "$RUNNER_TEMP/AuthKey.p8"
+
+      - name: Remove signing keychain
+        if: always()
+        run: '[ -n "${KEYCHAIN_PATH:-}" ] && security delete-keychain "$KEYCHAIN_PATH" || true'

@@ -82,7 +82,7 @@ Personal fork built for one person's iPhone/iPad/Mac. Keep changes small and in 
 - `.github/workflows/yattee-y-tests.yml` — `xcodebuild test` in the iOS Simulator (unsigned macOS hosts crash), on every push.
 **Cost must stay $0:** the repo stays public and workflows use only the standard `xcode-27` runner (free for public repos). Never add larger/paid runners, matrix fan-outs or long artifact retention; mark commits that need no build `[skip ci]`.
 **Release rhythm:** new features go to the iPhone XR first (dev IPA via `devicectl`); push without `[skip ci]` only once Yuwei has tried them there, so TestFlight (the main phone) only gets tried builds. TestFlight builds expire after 90 days.
-Signing is Xcode automatic signing with an App Store Connect API key in repo secrets (`ASC_KEY_P8`, `ASC_KEY_ID`, `ASC_ISSUER_ID`); no certificates in the repo. Never print or commit the key.
+Signing is Xcode automatic signing with an App Store Connect API key in repo secrets (`ASC_KEY_P8`, `ASC_KEY_ID`, `ASC_ISSUER_ID`) plus one fixed Apple Development certificate (`DEV_CERT_P12`, `DEV_CERT_PASSWORD`) imported into a throwaway keychain each run. Without it, every fresh runner minted a new development certificate and hit Apple's cap (11 revoked on 2026-11-18). No certificates in the repo. Never print or commit the key.
 
 **CloudKit schema:** `cloudkit/schema.ckdb` mirrors `CloudKitRecordMapper`. TestFlight builds use the Production environment, which does not create fields on the fly: when you add a record type or field, update the file, import it into Development in the CloudKit Console, then "Deploy Schema Changes" to Production — before shipping the build that writes it.
 
