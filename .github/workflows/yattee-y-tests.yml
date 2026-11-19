@@ -1,0 +1,31 @@
+# Run the unit test suite (Swift Testing) on macOS for every push to the fork.
+name: Yattee Y tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [yuwei]
+
+concurrency:
+  group: yattee-y-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    if: github.repository == 'yuwei-liang/yattee'
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 27.2
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_27.2*.app 2>/dev/null | sort -V | tail -n 1)
+          [ -n "$XCODE" ] || XCODE=$(ls -d /Applications/Xcode_27*.app | sort -V | tail -n 1)
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+      - name: Test
+        run: |
+          set -o pipefail
+          xcodebuild test -project Yattee.xcodeproj -scheme Yattee -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" \
+            | grep -E "✔|✘|Test run|error:|failed|passed|TEST (SUCCEEDED|FAILED)" | tail -n 300

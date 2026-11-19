@@ -18,7 +18,7 @@ import Foundation
 enum SourceLink {
     static let host = "add-source"
 
-    struct Request {
+    struct Request: Equatable, Sendable {
         let url: URL
         let name: String?
         let proxiesVideos: Bool

@@ -69,3 +69,22 @@ All Sparkle-dependent code must be wrapped in `#if SPARKLE ... #endif` so the `R
 **iOS 26 TabView search:** The search field is integrated into the bottom tab bar with `Tab(role: .search)`. Typing `\n` doesn't submit - use hardware key press via `press_return` (AXe key 40).
 
 **ScrollView children:** Video rows inside `LazyVStack`/`ScrollView` aren't exposed in the accessibility tree. Use coordinate-based tapping instead.
+
+## Yattee Y (this fork: yuwei-liang/yattee, branch `yuwei`)
+
+Personal fork built for one person's iPhone/iPad/Mac. Keep changes small and in their own files so upstream merges stay easy; merge `upstream/main` into `yuwei` periodically.
+
+**Identity:** bundle `com.yuweiliang.yattee` (+ `.ShareExtension`, `.TopShelf`), app group `group.com.yuweiliang.yattee.shared`, iCloud container `iCloud.com.yuweiliang.yattee`, team `234Y5MB95R`, display name "Yattee Y". Never put the upstream IDs back.
+
+**Builds need Xcode 27** (upstream uses iOS 27 SDK APIs); the owner's Mac has Xcode 26, so build, test and ship on GitHub Actions (`runs-on: xcode-27`, free for this public repo):
+- `.github/workflows/yattee-y-testflight.yml` — every push to `yuwei` archives iOS and uploads to TestFlight (internal group "Me", automatic distribution). Add `[skip ci]` to commit messages that don't need a build.
+- `.github/workflows/yattee-y-dev-ipa.yml` — manual; development-signed IPA with `YATTEE_DEV_LOG` (mpv log + font report to `Documents/dev.log`) for registered test devices. Install: `xcrun devicectl device install app --device <id> <ipa>`; read logs: `xcrun devicectl device copy from --device <id> --domain-type appDataContainer --domain-identifier com.yuweiliang.yattee --source Documents/dev.log --destination .`
+- `.github/workflows/yattee-y-tests.yml` — `xcodebuild test` on macOS, on every push.
+Signing is Xcode automatic signing with an App Store Connect API key in repo secrets (`ASC_KEY_P8`, `ASC_KEY_ID`, `ASC_ISSUER_ID`); no certificates in the repo. Never print or commit the key.
+
+**CloudKit schema:** `cloudkit/schema.ckdb` mirrors `CloudKitRecordMapper`. TestFlight builds use the Production environment, which does not create fields on the fly: when you add a record type or field, update the file, import it into Development in the CloudKit Console, then "Deploy Schema Changes" to Production — before shipping the build that writes it.
+
+**Fork features:**
+- `Yattee/Core/SourceLink.swift` — `yattee://add-source?url=&name=&proxy=1&user=&pass=` adds/updates a Yattee Server source and stores the login in the Keychain. Handled at the top of `onOpenURL`, before any logging. Deliver it to a device with `devicectl ... --payload-url`, never through chats or notes.
+- CJK subtitles: `SubtitleFont.mpvFontName` names real families (`PingFang SC`) because libass resolves fonts via CoreText. Under investigation: boxes still appear on device (2026-11-18).
+- Tests for fork code live in `YatteeTests/YatteeYTests.swift`.
