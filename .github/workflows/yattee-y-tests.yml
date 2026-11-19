@@ -1,5 +1,6 @@
 # Run the unit test suite (Swift Testing) in the iOS Simulator for every push to the fork.
-# (Unsigned macOS test hosts crash at launch: the app needs iCloud/app-group entitlements.)
+# The host app needs its iCloud/app-group entitlements to launch, so it is ad-hoc signed
+# ("Sign to Run Locally"), which the simulator accepts without a provisioning profile.
 name: Yattee Y tests
 
 on:
@@ -30,5 +31,5 @@ jobs:
           SIM=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if 'iPhone' in x['name']))")
           echo "Simulator $SIM"
           xcodebuild test -project Yattee.xcodeproj -scheme Yattee -destination "id=$SIM" \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= \
             | grep -E "✔|✘|Test run|error:|failed|passed|TEST (SUCCEEDED|FAILED)" | tail -n 300
