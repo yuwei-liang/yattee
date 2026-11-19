@@ -251,6 +251,10 @@ final class MPVClient: @unchecked Sendable {
         guard !text.isEmpty else { return }
 
         let line = MPVLogLine(prefix: prefix, level: level, text: text)
+        #if YATTEE_DEV_LOG
+        DevFileLog.reportFontsOnce()
+        DevFileLog.write("[\(level)] \(prefix): \(text)")
+        #endif
 
         if prefix == "ao/avfoundation", text.hasPrefix("restarting due to system notification") {
             reloadAudioOutputIfPaused()

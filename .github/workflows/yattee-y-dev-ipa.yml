@@ -38,6 +38,7 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" \
             -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
             -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
+            'SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited) YATTEE_DEV_LOG' \
             | tail -n 100
 
       - name: Export development IPA
