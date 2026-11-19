@@ -222,6 +222,12 @@ struct PlayerControlsView: View {
                     .allowsHitTesting(shouldShowControls)
                     .modifier(ControlsThemeModifier(theme: activeLayout.globalSettings.theme))
 
+                // Yattee Y: sleep timer countdown
+                SleepTimerBadge()
+                    .padding(.top, 10)
+                    .padding(.trailing, 12)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+
                 // Gesture feedback overlays
                 gestureFeedbackLayer(geometry: geometry)
             }

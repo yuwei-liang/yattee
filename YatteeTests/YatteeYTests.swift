@@ -97,3 +97,34 @@ struct WatchProgressTests {
         #expect(entry.finishedAt == nil)
     }
 }
+
+// MARK: - Sleep Timer
+
+@Suite("Sleep Timer", .serialized)
+@MainActor
+struct SleepTimerTests {
+
+    @Test("Countdown shows minutes and seconds, and cancel clears it")
+    func countdown() {
+        let timer = SleepTimer.shared
+        defer { timer.cancel() }
+        timer.start(minutes: 15, environment: nil)
+        #expect(timer.isActive)
+        #expect(["15:00", "14:59"].contains(timer.caption ?? ""))
+        #expect(timer.selectedMinutes == 15)
+        timer.cancel()
+        #expect(!timer.isActive && timer.caption == nil)
+    }
+
+    @Test("End-of-video mode stops playback once, then turns off")
+    func endOfVideo() {
+        let timer = SleepTimer.shared
+        defer { timer.cancel() }
+        #expect(!timer.consumeEndOfVideo())
+        timer.startEndOfVideo(environment: nil)
+        #expect(timer.caption == "播完这条")
+        #expect(timer.consumeEndOfVideo())
+        #expect(!timer.isActive)
+        #expect(!timer.consumeEndOfVideo())
+    }
+}

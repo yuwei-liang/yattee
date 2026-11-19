@@ -3201,6 +3201,14 @@ extension PlayerService: PlayerBackendDelegate {
 
         delegate?.playerServiceDidFinishPlaying(self)
 
+        #if os(iOS) || os(macOS)
+        // Yattee Y: sleep timer set to "播完这条" stops here instead of playing on.
+        if SleepTimer.shared.consumeEndOfVideo() {
+            sleepPreventionService.allowSleep()
+            return
+        }
+        #endif
+
         // Repeat one: restart immediately - no countdown, independent of queue contents
         // and the auto-play-next setting (that setting governs advancing to the next video)
         if state.queueMode == .repeatOne {

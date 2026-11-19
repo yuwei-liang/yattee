@@ -379,6 +379,13 @@ struct VideoContextMenuContent: View {
 
         Divider()
 
+        // Yattee Y: bedtime sleep timer, in the player's menu
+        #if os(iOS) || os(macOS)
+        if context == .player {
+            SleepTimerMenu()
+        }
+        #endif
+
         // Yattee Y: send to unspin for argument analysis
         if UnspinSubmitter.canSubmit(video, in: appEnvironment) {
             Button {

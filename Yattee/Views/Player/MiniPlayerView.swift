@@ -151,6 +151,12 @@ struct MiniPlayerView: View {
             }
             #endif
         }
+        .overlay(alignment: .topTrailing) {
+            // Yattee Y: sleep timer countdown
+            SleepTimerBadge()
+                .scaleEffect(0.85)
+                .offset(x: -6, y: -10)
+        }
         .accessibilityIdentifier("player.miniPlayer")
         .accessibilityLabel("player.miniPlayer")
         #if !os(macOS)
