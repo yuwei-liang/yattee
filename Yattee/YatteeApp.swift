@@ -88,6 +88,13 @@ struct YatteeApp: App {
                 .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
                 #endif
                 .onOpenURL { url in
+                    // Yattee Y: one-tap source setup. Must run before any parsing or
+                    // logging below, since the link can carry a password.
+                    if let request = SourceLink.parse(url) {
+                        let name = SourceLink.apply(request, in: appEnvironment)
+                        _ = appEnvironment.toastManager.showSuccess("Source added", subtitle: name)
+                        return
+                    }
                     let callback = XCallback(url)
                     if let action = LinkActionParser().parse(url) {
                         if action.dismissesPresentations {
