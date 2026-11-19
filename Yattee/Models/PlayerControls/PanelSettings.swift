@@ -512,8 +512,14 @@ struct PanelSettings: Codable, Hashable, Sendable {
         case .portrait:
             return portraitDefaultVisibility ?? defaultVisibility ?? .visible
         case .landscape:
+            #if os(macOS)
+            // Yattee Y: the Mac player opens as a small video-only window;
+            // 详情 (T) grows it to the corner layout.
+            let fallback: PanelDefaultVisibility = .hidden
+            #else
             let fallback: PanelDefaultVisibility =
                 effectiveLayoutMode == .corner && cornerLayoutFits ? .visible : .hidden
+            #endif
             return landscapeDefaultVisibility ?? defaultVisibility ?? fallback
         }
     }

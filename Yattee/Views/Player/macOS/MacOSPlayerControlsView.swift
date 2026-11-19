@@ -290,6 +290,9 @@ struct MacOSPlayerControlsView: View {
                     }
                     .allowsHitTesting(playerState.playbackState != .ended && !playerState.isFailed)
 
+                // Yattee Y: comments floating over the video (C)
+                YatteeYCommentsOverlay()
+
                 // Top bar (from preset top section) + control bar at bottom center
                 if let layout {
                     VStack(spacing: 0) {
@@ -677,7 +680,24 @@ struct MacOSPlayerControlsView: View {
                 onToggleFullscreen?()
                 return nil
 
+            // Yattee Y shortcuts
+            case 17: // T: small window ⇄ details and comments
+                YatteeYPlayerExtras.shared.toggleDetails()
+                return nil
+
+            case 8: // C: comments over the video
+                withAnimation(.easeInOut(duration: 0.2)) { YatteeYPlayerExtras.shared.toggleComments() }
+                return nil
+
+            case 1: // S: subtitles on/off
+                YatteeYPlayerExtras.shared.toggleCaptions()
+                return nil
+
             case 53: // Escape
+                if YatteeYPlayerExtras.shared.showsCommentsOverlay {
+                    withAnimation(.easeInOut(duration: 0.2)) { YatteeYPlayerExtras.shared.showsCommentsOverlay = false }
+                    return nil
+                }
                 if isFullscreen {
                     onToggleFullscreen?()
                     return nil

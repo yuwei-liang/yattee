@@ -291,6 +291,18 @@ struct MacOSControlsSectionRenderer: View {
                     .opacity(isLocked ? 0.5 : 1.0)
             }
 
+        // Yattee Y: one-click captions, quality menu, small-window and comments toggles.
+        case .captions:
+            YatteeYCaptionsButton(size: frameSize)
+                .disabled(isLocked)
+
+        case .videoTrack:
+            YatteeYQualityMenu(size: frameSize)
+                .disabled(isLocked)
+
+        case .panelToggle:
+            YatteeYPanelButtons(size: frameSize)
+
         default:
             // Button types not supported on macOS (brightness, orientation lock,
             // panscan, etc.) degrade gracefully when present in stale presets.

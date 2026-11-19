@@ -797,6 +797,16 @@ final class ExpandedPlayerWindowManager: NSObject {
         )
     }
 
+    /// Yattee Y: leave the small video-only window for the corner layout —
+    /// drop the aspect lock and grow to the size the layout needs, so the
+    /// details and comments have room beside the video.
+    func growForDetails() {
+        guard let window = activePlayerWindow, window !== overlayParent else { return }
+        pendingFullScreenAspectRatio = nil
+        window.contentResizeIncrements = NSSize(width: 1, height: 1)
+        growToCornerLayoutMinimum(window)
+    }
+
     /// Smallest window the corner layout fits in: its width threshold (below
     /// it the layout falls back to stacked), room for the narrowest side
     /// column next to a video column wide enough for the controls, and
