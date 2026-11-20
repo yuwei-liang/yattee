@@ -81,7 +81,7 @@ jobs:
             -authenticationKeyPath "$KEY_PATH" \
             -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
             -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
-            | tee "$RUNNER_TEMP/build.log" | grep -vE "DVTAssertions|SimDevice|^Object:|^Method:|^Thread:|Please file a bug|supportedArches|^\)$" | tail -n 200 || { grep -iE "error|failed" "$RUNNER_TEMP/build.log" | grep -v DVT | sort -u | head -60; exit 1; }
+            2>&1 | tee "$RUNNER_TEMP/build.log" | grep -vE "DVTAssertions|SimDevice|^Object:|^Method:|^Thread:|Please file a bug|supportedArches|^\)$" | tail -n 200 || { grep -iE "error|failed|crash|stack dump" "$RUNNER_TEMP/build.log" | grep -vE "DVT|SimDevice" | sort -u | head -80; exit 1; }
 
       - name: Upload to TestFlight
         run: |
@@ -179,7 +179,7 @@ jobs:
             -project Yattee.xcodeproj -scheme Yattee -configuration Release \
             -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" \
             CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- PROVISIONING_PROFILE_SPECIFIER= \
-            | tee "$RUNNER_TEMP/build.log" | grep -vE "DVTAssertions|SimDevice|^Object:|^Method:|^Thread:|Please file a bug|supportedArches|^\)$" | tail -n 200 || { grep -iE "error|failed" "$RUNNER_TEMP/build.log" | grep -v DVT | sort -u | head -60; exit 1; }
+            2>&1 | tee "$RUNNER_TEMP/build.log" | grep -vE "DVTAssertions|SimDevice|^Object:|^Method:|^Thread:|Please file a bug|supportedArches|^\)$" | tail -n 200 || { grep -iE "error|failed|crash|stack dump" "$RUNNER_TEMP/build.log" | grep -vE "DVT|SimDevice" | sort -u | head -80; exit 1; }
 
       - name: Upload to TestFlight
         run: |
@@ -277,7 +277,7 @@ jobs:
             -project Yattee.xcodeproj -scheme Yattee -configuration Release \
             -destination 'generic/platform=tvOS' -archivePath "$ARCHIVE" \
             CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- PROVISIONING_PROFILE_SPECIFIER= AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            | tee "$RUNNER_TEMP/build.log" | grep -vE "DVTAssertions|SimDevice|^Object:|^Method:|^Thread:|Please file a bug|supportedArches|^\)$" | tail -n 200 || { grep -iE "error|failed" "$RUNNER_TEMP/build.log" | grep -v DVT | sort -u | head -60; exit 1; }
+            2>&1 | tee "$RUNNER_TEMP/build.log" | grep -vE "DVTAssertions|SimDevice|^Object:|^Method:|^Thread:|Please file a bug|supportedArches|^\)$" | tail -n 200 || { grep -iE "error|failed|crash|stack dump" "$RUNNER_TEMP/build.log" | grep -vE "DVT|SimDevice" | sort -u | head -80; exit 1; }
 
       - name: Upload to TestFlight
         run: |
