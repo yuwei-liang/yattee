@@ -72,6 +72,7 @@ final class WatchRater {
         if let last = lastReported, last.id == videoID, Date().timeIntervalSince(last.at) < 10 { return }
         lastReported = (videoID, Date())
         let watched = min(max(0, watched), duration)
+        YouTubePicks.shared.watched(videoID: videoID, watched: watched, duration: duration, ended: ended)
 
         if let current = prompt {
             send(current, followUp: nil)

@@ -14,6 +14,8 @@ struct HomeHorizontalCards: View {
     let queueSource: QueueSource
     let sourceLabel: String
     var loadMoreVideos: LoadMoreVideosCallback? = nil
+    /// Extra context-menu entries per card (Yattee Y).
+    var customActions: ((Video) -> [VideoContextAction])? = nil
 
     #if os(tvOS)
     private let cardWidth: CGFloat = 320
@@ -35,6 +37,7 @@ struct HomeHorizontalCards: View {
                         .frame(width: cardWidth, height: cardHeight, alignment: .top)
                         .tappableVideo(
                             video,
+                            customActions: customActions?(video) ?? [],
                             queueSource: queueSource,
                             sourceLabel: sourceLabel,
                             videoList: videos,

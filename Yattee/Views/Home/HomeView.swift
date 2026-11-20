@@ -476,6 +476,7 @@ struct HomeView: View {
                 continueWatchingSection
                     .padding(.bottom, 24)
             }
+            YouTubePicksSection()
             RecommendedFeedSection()
         } else {
             defaultHomeContent
@@ -486,6 +487,9 @@ struct HomeView: View {
     #if !os(tvOS)
     @ViewBuilder
     private var yatteeYHomeContent: some View {
+        ClipboardLinkBanner()
+            .animation(.snappy, value: YouTubePicks.shared.clipboardOffer)
+
         HomeChipsRow(chips: [
             HomeChip(id: "continue", title: "继续观看", systemImage: "play.circle", count: continueWatchingCount) {
                 appEnvironment?.navigationCoordinator.navigate(to: .continueWatching)
@@ -514,6 +518,8 @@ struct HomeView: View {
             continueWatchingSection
                 .padding(.bottom, 12)
         }
+
+        YouTubePicksSection()
 
         RecommendedFeedSection()
             .sheet(isPresented: $showingUnspinReports, onDismiss: { Task { await refreshUnspinCount() } }) {

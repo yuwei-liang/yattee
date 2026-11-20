@@ -95,6 +95,12 @@ struct YatteeApp: App {
                         _ = appEnvironment.toastManager.showSuccess("Source added", subtitle: name)
                         return
                     }
+                    // Yattee Y: yattee://pick?url=… puts a YouTube link on the
+                    // "从 YouTube 带来的" row instead of playing it (Mac bookmarklet).
+                    if let link = YouTubePicks.pickLink(in: url) {
+                        handlePickLink(link)
+                        return
+                    }
                     let callback = XCallback(url)
                     if let action = LinkActionParser().parse(url) {
                         if action.dismissesPresentations {
@@ -123,6 +129,11 @@ struct YatteeApp: App {
                     appEnvironment.navigationCoordinator.dismissPresentations()
                     handleDeepLink(url)
                 }
+                #if os(macOS)
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                    YouTubePicks.shared.appBecameActive()
+                }
+                #endif
                 .onContinueUserActivity(HandoffManager.activityType) { activity in
                     appEnvironment.navigationCoordinator.dismissPresentations()
                     handleContinuedActivity(activity)
@@ -281,6 +292,7 @@ struct YatteeApp: App {
             if newPhase == .active {
                 // Refresh media source password status (Keychain state can change in background)
                 appEnvironment.mediaSourcesManager.refreshPasswordStoredStatus()
+                YouTubePicks.shared.appBecameActive()
 
                 // Identity, statuses, deletion repair and the fetch, in that
                 // order — each one is what makes the next one correct.
@@ -337,6 +349,10 @@ struct YatteeApp: App {
 
                 // Check clipboard for external video URLs
                 checkClipboardForExternalURL()
+
+                #if os(iOS)
+                YouTubePicks.shared.appBecameActive()
+                #endif
 
                 // Start periodic polling as fallback for missed push notifications
                 appEnvironment.cloudKitSync.startForegroundPolling()
@@ -554,6 +570,27 @@ struct YatteeApp: App {
 
         // All other destinations use standard navigation
         appEnvironment.navigationCoordinator.navigate(to: destination)
+    }
+
+    /// Yattee Y: save a link to the picks row. On the Mac, when nothing is playing,
+    /// step back out of the way so the browser stays in front.
+    private func handlePickLink(_ link: URL) {
+        #if os(macOS)
+        let origin = "bookmarklet"
+        #elseif os(tvOS)
+        let origin = "tv"
+        #else
+        let origin = "iphone"
+        #endif
+        Task {
+            let saved = await YouTubePicks.shared.add(url: link, origin: origin)
+            #if os(macOS)
+            if saved, appEnvironment.playerService.state.currentVideo == nil {
+                try? await Task.sleep(for: .seconds(1.2))
+                NSApp.hide(nil)
+            }
+            #endif
+        }
     }
 
     /// Tell the user an incoming link couldn't be opened instead of failing silently.

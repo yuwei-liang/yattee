@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yattee Y 书签按钮</title>
+<style>
+  :root { color-scheme: light dark; --bg:#f5f7fb; --fg:#16202e; --dim:#5b6b82; --card:#fff; --accent:#1f7fc4; --pick:#b8741a; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#121a2a; --fg:#e8f1fb; --dim:#8d9bb3; --card:#1c2740; --accent:#6cc3f5; --pick:#f5c46c; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.65 -apple-system, "PingFang SC", system-ui, sans-serif; padding:40px 16px; }
+  main { max-width:620px; margin:0 auto; display:grid; gap:22px; }
+  h1 { margin:0; font-size:26px; }
+  p { margin:0; color:var(--dim); }
+  .marks { display:flex; gap:14px; flex-wrap:wrap; }
+  a.mark { display:inline-block; padding:10px 18px; border-radius:10px; background:var(--card); color:var(--accent); font-weight:600; text-decoration:none; border:2px dashed var(--accent); cursor:grab; }
+  a.mark.pick { color:var(--pick); border-color:var(--pick); }
+  ol { margin:0; padding-left:22px; color:var(--dim); }
+  b { color:var(--fg); }
+</style>
+<main>
+  <h1>Yattee Y 书签按钮</h1>
+  <p>把下面两个按钮<b>拖到浏览器的书签栏</b>。以后在 YouTube 视频页上点一下就行。</p>
+  <div class="marks">
+    <a class="mark" href="javascript:location.href='yattee://open?url='+encodeURIComponent(location.href)">▶ Yattee Y</a>
+    <a class="mark pick" href="javascript:location.href='yattee://pick?url='+encodeURIComponent(location.href)">＋ 稍后看</a>
+  </div>
+  <ol>
+    <li><b>▶ Yattee Y</b>：在 Yattee Y 里打开这个视频，接着播。</li>
+    <li><b>＋ 稍后看</b>：存进首页「从 YouTube 带来的」那一排，手机和电视上也能看到。没在放视频时，Yattee Y 存好后会自己退到后面，你接着刷。</li>
+    <li>第一次点时浏览器会问要不要打开 Yattee Y。Chrome 里勾上「始终允许」就不再问了。</li>
+  </ol>
+</main>
+</html>

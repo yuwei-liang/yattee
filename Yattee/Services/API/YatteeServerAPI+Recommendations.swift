@@ -83,6 +83,53 @@ extension YatteeServerAPI {
     }
 }
 
+/// A video brought over from YouTube, for the home row "从 YouTube 带来的".
+struct YouTubePickBody: Encodable, Sendable {
+    let videoId: String
+    let title: String?
+    let author: String?
+    let origin: String?
+}
+
+struct YouTubePickResponse: Decodable, Sendable {
+    let ok: Bool
+    let title: String?
+    let count: Int?
+}
+
+extension YatteeServerAPI {
+    /// The row: picks not watched yet, newest first.
+    func youTubePicks(instance: Instance) async throws -> [Video] {
+        let response: [YatteeVideo] = try await httpClient.fetch(
+            GenericEndpoint.get("/api/v1/recommended/picks"), baseURL: instance.url)
+        return response.map { $0.toVideo() }
+    }
+
+    func addYouTubePick(_ body: YouTubePickBody, instance: Instance) async throws -> YouTubePickResponse {
+        let endpoint = GenericEndpoint.post("/api/v1/recommended/picks", body: body)
+        return try await httpClient.fetch(endpoint, baseURL: instance.url)
+    }
+
+    func removeYouTubePick(videoID: String, instance: Instance) async throws {
+        let endpoint = GenericEndpoint.delete("/api/v1/recommended/picks/\(videoID)")
+        let _: OKResponse = try await httpClient.fetch(endpoint, baseURL: instance.url)
+    }
+}
+
+extension ContentService {
+    func youTubePicks(instance: Instance) async throws -> [Video] {
+        try await yatteeServerAPI(for: instance).youTubePicks(instance: instance)
+    }
+
+    func addYouTubePick(_ body: YouTubePickBody, instance: Instance) async throws -> YouTubePickResponse {
+        try await yatteeServerAPI(for: instance).addYouTubePick(body, instance: instance)
+    }
+
+    func removeYouTubePick(videoID: String, instance: Instance) async throws {
+        try await yatteeServerAPI(for: instance).removeYouTubePick(videoID: videoID, instance: instance)
+    }
+}
+
 extension ContentService {
     func sendRecommendationFeedback(
         videoID: String, action: RecommendationFeedback, reason: String?, instance: Instance
