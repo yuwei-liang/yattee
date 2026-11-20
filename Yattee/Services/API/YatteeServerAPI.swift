@@ -597,7 +597,7 @@ struct ChannelMetadataItem: Decodable, Sendable {
 
 // MARK: - yt-dlp Server Response Models (Invidious-compatible)
 
-private struct YatteeVideo: Decodable, Sendable {
+struct YatteeVideo: Decodable, Sendable {
     let videoId: String
     let title: String
     let description: String?
