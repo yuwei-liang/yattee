@@ -10,7 +10,6 @@
 
 import SwiftUI
 
-#if !os(tvOS)
 struct RecommendedFeedSection: View {
     @Environment(\.appEnvironment) private var appEnvironment
     #if os(iOS)
@@ -46,19 +45,20 @@ struct RecommendedFeedSection: View {
                 placeholder
             } else {
                 if usesGrid {
-                    LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 280), spacing: 20, alignment: .top)],
-                        alignment: .leading,
-                        spacing: 28
-                    ) { cards }
+                    LazyVGrid(columns: gridColumns, alignment: .leading, spacing: gridSpacing) { cards }
                 } else {
                     cards
                 }
                 footer
             }
         }
+        #if os(tvOS)
+        .padding(.horizontal, 48)
+        .padding(.bottom, 60)
+        #else
         .padding(.horizontal, 16)
         .padding(.bottom, 24)
+        #endif
         .task { if videos.isEmpty { await load() } }
     }
 
@@ -66,12 +66,29 @@ struct RecommendedFeedSection: View {
 
     /// Mac and wide iPad show the feed as a YouTube-style grid; iPhone keeps one column.
     private var usesGrid: Bool {
-        #if os(macOS)
+        #if os(macOS) || os(tvOS)
         true
         #elseif os(iOS)
         horizontalSizeClass == .regular
         #else
         false
+        #endif
+    }
+
+    /// Apple TV: four fixed columns read from the couch; elsewhere cards fill the width.
+    private var gridColumns: [GridItem] {
+        #if os(tvOS)
+        Array(repeating: GridItem(.flexible(), spacing: 48, alignment: .top), count: 4)
+        #else
+        [GridItem(.adaptive(minimum: 280), spacing: 20, alignment: .top)]
+        #endif
+    }
+
+    private var gridSpacing: CGFloat {
+        #if os(tvOS)
+        56
+        #else
+        28
         #endif
     }
 
@@ -124,7 +141,7 @@ struct RecommendedFeedSection: View {
             VideoCardView(video: video)
                 .tappableVideo(
                     video,
-                    customActions: feedbackActions(for: video),
+                    customActions: cardMenuActions(for: video),
                     sourceLabel: "推荐",
                     videoList: list,
                     videoIndex: list.firstIndex(where: { $0.id == video.id }) ?? index
@@ -136,12 +153,15 @@ struct RecommendedFeedSection: View {
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.tint)
                         .lineLimit(usesGrid ? 1 : 2)
+                        #if !os(tvOS)
                         .help(why)
+                        #endif
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
                 }
                 Spacer(minLength: 0)
+                #if !os(tvOS)
                 Menu {
                     ForEach(Array(menuActions(for: video).enumerated()), id: \.offset) { _, action in
                         Button(role: action.role, action: action.action) {
@@ -161,6 +181,7 @@ struct RecommendedFeedSection: View {
                 .fixedSize()
                 #endif
                 .accessibilityLabel("推荐选项")
+                #endif
             }
         }
     }
@@ -224,6 +245,15 @@ struct RecommendedFeedSection: View {
             VideoContextAction("不感兴趣", systemImage: "hand.thumbsdown") { beginDismiss(video) },
             VideoContextAction("别再推这个频道", systemImage: "person.crop.circle.badge.xmark", role: .destructive) { blockChannel(of: video) },
         ]
+    }
+
+    /// The card's long-press menu. On Apple TV it also carries unspin, since there is no ⋯ button.
+    private func cardMenuActions(for video: Video) -> [VideoContextAction] {
+        #if os(tvOS)
+        menuActions(for: video)
+        #else
+        feedbackActions(for: video)
+        #endif
     }
 
     /// The card's ⋯ menu: unspin first (as in the design), then the feedback actions.
@@ -331,4 +361,3 @@ private struct FlowChips: View {
         }
     }
 }
-#endif

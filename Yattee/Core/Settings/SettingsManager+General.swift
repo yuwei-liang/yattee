@@ -709,13 +709,14 @@ extension SettingsManager {
     // MARK: - Video Tap Action (tvOS only)
 
     #if os(tvOS)
-    /// Action to perform when clicking a video cell on tvOS. Default is openInfo.
+    /// Action to perform when clicking a video cell on tvOS.
+    /// Yattee Y: default is playVideo, like YouTube (info stays in the long-press menu).
     var tvOSVideoTapAction: VideoTapAction {
         get {
             if let cached = _tvOSVideoTapAction { return cached }
             guard let rawValue = localDefaults.string(forKey: "tvOSVideoTapAction"),
                   let action = VideoTapAction(rawValue: rawValue) else {
-                return .openInfo
+                return .playVideo
             }
             return action
         }

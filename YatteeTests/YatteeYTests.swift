@@ -128,3 +128,21 @@ struct SleepTimerTests {
         #expect(!timer.consumeEndOfVideo())
     }
 }
+
+// MARK: - Resume
+
+@Suite("Resume Behavior")
+@MainActor
+struct ResumeBehaviorTests {
+
+    @Test("A started video continues where it stopped, without asking")
+    func resumeDefaultsToContinue() {
+        let settings = SettingsManager()
+        let key = settings.platformKey(.resumeAction)
+        let saved = UserDefaults.standard.object(forKey: key)
+        UserDefaults.standard.removeObject(forKey: key)
+        defer { if let saved { UserDefaults.standard.set(saved, forKey: key) } }
+        settings.clearCache()
+        #expect(settings.resumeAction == .continueWatching)
+    }
+}

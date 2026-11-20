@@ -147,7 +147,8 @@ extension SettingsManager {
     var resumeAction: ResumeAction {
         get {
             if let cached = _resumeAction { return cached }
-            return ResumeAction(rawValue: string(for: .resumeAction) ?? "") ?? .ask
+            // Yattee Y: continue where you left off without asking, like YouTube.
+            return ResumeAction(rawValue: string(for: .resumeAction) ?? "") ?? .continueWatching
         }
         set {
             _resumeAction = newValue

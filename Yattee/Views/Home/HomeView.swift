@@ -337,6 +337,8 @@ struct HomeView: View {
     /// Each case mirrors what `sectionView(for:)` actually renders: a section with
     /// nothing to show renders nothing, so it must not count as content here.
     private var isHomeEmpty: Bool {
+        // Yattee Y: the recommendation feed always renders (content, a spinner or a retry).
+        if appEnvironment?.instancesManager.enabledYatteeServerInstances.isEmpty == false { return false }
         let sections = settingsManager?.visibleSections() ?? HomeSectionItem.defaultOrder.filter { HomeSectionItem.defaultVisibility[$0] == true }
         for section in sections {
             switch section {
@@ -468,7 +470,16 @@ struct HomeView: View {
             defaultHomeContent
         }
         #else
-        defaultHomeContent
+        // Yattee Y: on Apple TV, home is "continue watching" over the recommendation grid.
+        if appEnvironment?.instancesManager.enabledYatteeServerInstances.isEmpty == false {
+            if !recentContinueWatching.isEmpty {
+                continueWatchingSection
+                    .padding(.bottom, 24)
+            }
+            RecommendedFeedSection()
+        } else {
+            defaultHomeContent
+        }
         #endif
     }
 

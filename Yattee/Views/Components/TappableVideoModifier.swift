@@ -52,7 +52,7 @@ struct TappableVideoModifier: ViewModifier {
         Button {
             dismissKeyboard()
             #if os(tvOS)
-            let tapAction = appEnvironment?.settingsManager.tvOSVideoTapAction ?? .openInfo
+            let tapAction = appEnvironment?.settingsManager.tvOSVideoTapAction ?? .playVideo
             if tapAction == .openInfo {
                 appEnvironment?.navigationCoordinator.navigate(
                     to: .video(.loaded(video), queueContext: queueContext)
