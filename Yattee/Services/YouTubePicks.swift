@@ -17,8 +17,6 @@ import Observation
 import Security
 #if os(iOS)
 import UIKit
-#elseif os(macOS)
-import AppKit
 #endif
 
 @MainActor
@@ -182,15 +180,8 @@ final class YouTubePicks {
             let found = (try? result.get())?.contains(.probableWebURL) ?? false
             Task { @MainActor in self.clipboardOffer = found }
         }
-        #elseif os(macOS)
-        let board = NSPasteboard.general
-        guard board.changeCount != lastClipboardChange else { return }
-        lastClipboardChange = board.changeCount
-        guard #available(macOS 15.4, *) else { return }
-        board.detectPatterns(for: [.probableWebURL]) { result in
-            let found = (try? result.get())?.contains(.probableWebURL) ?? false
-            Task { @MainActor in self.clipboardOffer = found }
-        }
+        // macOS: no prompt-free pattern check on NSPasteboard; ⌘O (Open Link) prefills the
+        // clipboard link instead, so no banner here.
         #endif
     }
 

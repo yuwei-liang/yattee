@@ -42,7 +42,7 @@ Yattee Y 是 Yuwei 自用的 Yattee 分支：配合自家 NAS 上的 Yattee Serv
 ## 接下来（按优先级）
 
 - **看完一键评价**（2026-11-20：Mac / Apple TV 2.1.0 (1020)、iPhone 2.1.0 (1021) 已上 TestFlight）：每次看完回传看了多久；3 分钟以上的视频看完（手机上看 5 分钟以上退出也算）底部弹「爽 / 涨知识 / 被带节奏了 / 一般」，8 秒不理自动收起，连续 3 次不理就歇 5 次；「被带节奏了」可再选少推这个频道或交给 unspin。电视上只在播完时问。Claude 把评价看得比点击重，首页顶部一行写这轮因为你的反馈改了什么。服务器 rec8–rec10：按主题限量、目标改成「学习成长 + 爽、不带节奏」、接收观看报告。
-- **从 YouTube 带视频过来**（2.2.0，2026-11-20 编译中）：iPhone 在 YouTube 里分享 → Yattee Y 弹小卡片「现在播 / 稍后看」，稍后看不离开 YouTube；复制链接再切回来，顶部出现「粘贴就播放」（系统粘贴按钮，不弹权限）；首页「继续观看」下面多一排「从 YouTube 带来的」，存在服务器上，iPhone / Mac / Apple TV 同一排，看完 80% 自动移走，长按可移走；Mac 书签栏两个按钮（`scripts/yattee-y-bookmarklets.html`，`yattee://pick?url=`）。Claude 把带来的视频当作最强的兴趣信号。服务器 rec11：`/api/v1/recommended/picks`。设计稿见 artifact「Yattee Y 从 YouTube 带视频」。
+- **从 YouTube 带视频过来**（2.2.0：iPhone / Apple TV (1023)，2026-11-20）：iPhone 在 YouTube 里分享 → Yattee Y 弹小卡片「现在播 / 稍后看」，稍后看不离开 YouTube；iPhone 复制链接再切回来，顶部出现「粘贴就播放」（系统粘贴按钮，不弹权限；Mac 用 ⌘O，会自动填剪贴板里的链接）；首页「继续观看」下面多一排「从 YouTube 带来的」，存在服务器上，iPhone / Mac / Apple TV 同一排，看完 80% 自动移走，长按可移走；Mac 书签栏两个按钮（`scripts/yattee-y-bookmarklets.html`，`yattee://pick?url=`）。Claude 把带来的视频当作最强的兴趣信号。服务器 rec11：`/api/v1/recommended/picks`。设计稿见 artifact「Yattee Y 从 YouTube 带视频」。
 - P2 收藏分类：书签已有标签字段，做按主题分组的书签页、加书签时一键选标签。
 - P2 半听模式：切走、锁屏继续出声；「只听声音」开关（省流量、开得快）。
 - P2 手机端预下载：夜里 Wi-Fi 下自动下前几条推荐（带字幕），早上秒开、可离线。

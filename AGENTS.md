@@ -96,3 +96,9 @@ Signing is Xcode automatic signing with an App Store Connect API key in repo sec
 - Sleep timer (`Services/Player/SleepTimer.swift`, iOS/macOS): "睡眠定时" submenu in the player-context video menu, moon badge in `PlayerControlsView` and `MiniPlayerView`, end-of-video hook in `PlayerService.backendDidFinishPlaying`. Adapted from 7inh/yattee 5fd6c3d.
 - Early end-of-file refresh (max 2 per video) in `backendDidFinishPlaying` and un-finishing below 90% in `WatchEntry.updateProgress`; adapted from michaelhalstead/yattee 9a062a5.
 - Tests for fork code live in `YatteeTests/YatteeYTests.swift`.
+
+- **When an archive fails with no error in the log**: Xcode 27 keeps compile errors out of the
+  `gh run view --log` output. Read the job log through the API instead
+  (`gh api repos/yuwei-liang/yattee/actions/jobs/<job id>/logs`) and look for `error:`; the macOS job
+  also prints `xcresulttool get build-results` on failure. Check macOS-only APIs carefully: iOS and
+  tvOS passing says nothing about AppKit (2.2.0: `NSPasteboard` has no `detectPatterns`).

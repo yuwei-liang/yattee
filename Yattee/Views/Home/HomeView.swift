@@ -487,8 +487,10 @@ struct HomeView: View {
     #if !os(tvOS)
     @ViewBuilder
     private var yatteeYHomeContent: some View {
+        #if os(iOS)
         ClipboardLinkBanner()
             .animation(.snappy, value: YouTubePicks.shared.clipboardOffer)
+        #endif
 
         HomeChipsRow(chips: [
             HomeChip(id: "continue", title: "继续观看", systemImage: "play.circle", count: continueWatchingCount) {

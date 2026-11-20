@@ -55,7 +55,7 @@ struct YouTubePicksSection: View {
     }
 }
 
-#if os(iOS) || os(macOS)
+#if os(iOS)
 /// "剪贴板里有个链接" with the system paste button, which needs no permission prompt.
 struct ClipboardLinkBanner: View {
     private var picks: YouTubePicks { .shared }
