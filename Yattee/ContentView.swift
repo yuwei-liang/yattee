@@ -36,6 +36,7 @@ struct ContentView: View {
             toastScope: .main
         )
         .toastOverlay()
+        .watchRatingOverlay(inPlayer: false)
     }
 
     // MARK: - Unified Content View (macOS 15+, tvOS 18+)

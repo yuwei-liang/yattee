@@ -279,6 +279,11 @@ final class PlayerService {
         if state.currentVideo != nil && isNewVideo && !videoEndedNaturally {
             saveProgressAndSync()
         }
+        // Yattee Y: the previous watch is over; tell the recommender how it went.
+        if let previous = state.currentVideo, isNewVideo, !videoEndedNaturally {
+            WatchRater.shared.watchEnded(
+                video: previous, watched: state.currentTime, duration: state.duration, ended: false)
+        }
 
         // Mirror this watch into the active account's server history.
         // Unconditional, and the service decides: `isNewVideo` is already false
@@ -745,6 +750,10 @@ final class PlayerService {
         currentPlayTask = nil
 
         saveProgressAndSync()
+        if let video = state.currentVideo, !videoEndedNaturally {
+            WatchRater.shared.watchEnded(
+                video: video, watched: state.currentTime, duration: state.duration, ended: false)
+        }
         watchHistorySyncService?.endSession()
         cleanup()
 
@@ -1164,6 +1173,8 @@ final class PlayerService {
         // The opening owns the player from here, before the load task even runs
         playbackGeneration += 1
 
+        reportWatchBeingReplaced(by: video)
+
         // Set video info before expanding so the sheet animates with content visible
         state.setPlaybackState(.loading)
         state.setCurrentVideo(video, stream: nil)
@@ -1210,6 +1221,8 @@ final class PlayerService {
 
         // The opening owns the player from here, before the load task even runs
         playbackGeneration += 1
+
+        reportWatchBeingReplaced(by: video)
 
         // Set video info before expanding so the sheet animates with content visible
         state.setPlaybackState(.loading)
@@ -3186,6 +3199,9 @@ extension PlayerService: PlayerBackendDelegate {
 
         state.setPlaybackState(.ended)
         saveProgressAsCompleted()
+        if let video = state.currentVideo {
+            WatchRater.shared.watchEnded(video: video, watched: state.duration, duration: state.duration, ended: true)
+        }
 
         // The watch is over, so the session ends with it — after the completion
         // save, which is the last progress this session has to mirror. A
@@ -3241,6 +3257,13 @@ extension PlayerService: PlayerBackendDelegate {
             // No auto-play will happen - allow sleep
             sleepPreventionService.allowSleep()
         }
+    }
+
+    /// Yattee Y: the video on screen is about to be replaced; report how its watch went.
+    private func reportWatchBeingReplaced(by video: Video) {
+        guard let previous = state.currentVideo, previous.id != video.id, !videoEndedNaturally else { return }
+        WatchRater.shared.watchEnded(
+            video: previous, watched: state.currentTime, duration: state.duration, ended: false)
     }
 
     /// Called when a video starts playing to trigger proactive continuation loading.

@@ -31,6 +31,26 @@ private struct RecommendationRebuildResponse: Decodable, Sendable {
     let results: Int
 }
 
+/// How a watch went, for the curator: seconds watched of the length, and the one-tap rating.
+struct WatchReport: Encodable, Sendable {
+    let videoId: String
+    let title: String?
+    let author: String?
+    let watched: Double
+    let duration: Double
+    let ended: Bool
+    let ratings: [String]
+    let followUp: String?
+}
+
+private struct OKResponse: Decodable, Sendable {
+    let ok: Bool
+}
+
+private struct RecommendationStatusResponse: Decodable, Sendable {
+    let note: String?
+}
+
 extension YatteeServerAPI {
     /// Sends one piece of feedback. Returns how many items the server dropped from the list.
     @discardableResult
@@ -49,6 +69,18 @@ extension YatteeServerAPI {
         let response: RecommendationRebuildResponse = try await httpClient.fetch(endpoint, baseURL: instance.url)
         return response.results
     }
+
+    func sendWatchReport(_ report: WatchReport, instance: Instance) async throws {
+        let endpoint = GenericEndpoint.post("/api/v1/recommended/watch-report", body: report)
+        let _: OKResponse = try await httpClient.fetch(endpoint, baseURL: instance.url)
+    }
+
+    /// What the last curated round changed because of the viewer's feedback ("" when nothing).
+    func recommendationNote(instance: Instance) async throws -> String {
+        let response: RecommendationStatusResponse = try await httpClient.fetch(
+            GenericEndpoint.get("/api/v1/recommended/status"), baseURL: instance.url)
+        return response.note ?? ""
+    }
 }
 
 extension ContentService {
@@ -61,5 +93,13 @@ extension ContentService {
 
     func rebuildRecommendations(instance: Instance) async throws -> Int {
         try await yatteeServerAPI(for: instance).rebuildRecommendations(instance: instance)
+    }
+
+    func sendWatchReport(_ report: WatchReport, instance: Instance) async throws {
+        try await yatteeServerAPI(for: instance).sendWatchReport(report, instance: instance)
+    }
+
+    func recommendationNote(instance: Instance) async throws -> String {
+        try await yatteeServerAPI(for: instance).recommendationNote(instance: instance)
     }
 }

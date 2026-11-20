@@ -248,6 +248,7 @@ struct ExpandedPlayerSheet: View {
             .overlay(alignment: .bottom) {
                 expandedCommentsOverlay
             }
+            .watchRatingOverlay(inPlayer: true)
             .animation(.smooth(duration: 0.3), value: isCommentsExpanded)
     }
 

@@ -124,6 +124,7 @@ struct TVPlayerView: View {
         mpvPlayerContent
             .ignoresSafeArea()
             .playerToastOverlay()
+            .watchRatingOverlay(inPlayer: true)
             // Global sheet requests (e.g. link action confirmations) while the
             // player covers the screen; the root host is underneath it.
             .appSheetHost(isTopLevel: appEnvironment?.navigationCoordinator.isPlayerExpanded == true, toastScope: .player)

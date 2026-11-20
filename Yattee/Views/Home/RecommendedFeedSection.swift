@@ -20,6 +20,8 @@ struct RecommendedFeedSection: View {
     @State private var isLoading = false
     @State private var loadError: String?
     @State private var isRebuilding = false
+    /// What the last curated round changed because of the viewer's ratings and feedback.
+    @State private var note = ""
     /// Videos the viewer dismissed, waiting out the undo window or showing reasons.
     @State private var dismissed: [String: DismissState] = [:]
     @State private var pendingSends: [String: Task<Void, Never>] = [:]
@@ -104,12 +106,19 @@ struct RecommendedFeedSection: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text("推荐")
-                .font(.title2.bold())
-            Spacer()
-            if !videos.isEmpty {
-                Text("Claude 为你挑的 \(visibleVideos.count) 条")
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("推荐")
+                    .font(.title2.bold())
+                Spacer()
+                if !videos.isEmpty {
+                    Text("Claude 为你挑的 \(visibleVideos.count) 条")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if !note.isEmpty {
+                Label(note, systemImage: "checkmark.bubble")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -272,6 +281,7 @@ struct RecommendedFeedSection: View {
         do {
             let list = try await appEnvironment.contentService.popular(for: server)
             videos = list
+            note = (try? await appEnvironment.contentService.recommendationNote(instance: server)) ?? ""
             dismissed = [:]
             loadError = nil
         } catch {
