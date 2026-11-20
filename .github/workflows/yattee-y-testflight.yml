@@ -1,4 +1,4 @@
-# Build Yattee Y (this fork) for iOS and upload it to TestFlight, internal testing only.
+# Build Yattee Y (this fork) for iOS, macOS and tvOS and upload it to TestFlight, internal testing only.
 #
 # Signing is Xcode's automatic, cloud-managed signing driven by an App Store Connect
 # API key (team 234Y5MB95R), so no certificates or profiles live in this repo.
@@ -9,8 +9,8 @@ on:
   workflow_dispatch:
     inputs:
       platforms:
-        description: "ios, macos, or both"
-        default: both
+        description: "comma list of ios, macos, tvos; or all (both = ios,macos)"
+        default: all
   push:
     branches: [yuwei]
 
@@ -21,7 +21,7 @@ concurrency:
 jobs:
   ios:
     # Only this fork's owner can trigger a signed build; forks and PRs never see the key.
-    if: github.repository == 'yuwei-liang/yattee' && github.actor == 'yuwei-liang' && inputs.platforms != 'macos'
+    if: github.repository == 'yuwei-liang/yattee' && github.actor == 'yuwei-liang' && (github.event_name == 'push' || inputs.platforms == 'all' || inputs.platforms == 'both' || contains(inputs.platforms, 'ios'))
     runs-on: xcode-27
     timeout-minutes: 90
     steps:
@@ -120,7 +120,7 @@ jobs:
 
   macos:
     # Only this fork's owner can trigger a signed build; forks and PRs never see the key.
-    if: github.repository == 'yuwei-liang/yattee' && github.actor == 'yuwei-liang' && inputs.platforms != 'ios'
+    if: github.repository == 'yuwei-liang/yattee' && github.actor == 'yuwei-liang' && (github.event_name == 'push' || inputs.platforms == 'all' || inputs.platforms == 'both' || contains(inputs.platforms, 'macos'))
     runs-on: xcode-27
     timeout-minutes: 90
     steps:
@@ -179,6 +179,105 @@ jobs:
             -project Yattee.xcodeproj -scheme Yattee -configuration Release \
             -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" \
             CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- PROVISIONING_PROFILE_SPECIFIER= \
+            | tail -n 200
+
+      - name: Upload to TestFlight
+        run: |
+          set -o pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>234Y5MB95R</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>testFlightInternalTestingOnly</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE" -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
+            | tail -n 100
+
+      - name: Remove API key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/AuthKey.p8"
+
+      - name: Remove signing keychain
+        if: always()
+        run: '[ -n "${KEYCHAIN_PATH:-}" ] && security delete-keychain "$KEYCHAIN_PATH" || true'
+
+  tvos:
+    # Only this fork's owner can trigger a signed build; forks and PRs never see the key.
+    if: github.repository == 'yuwei-liang/yattee' && github.actor == 'yuwei-liang' && (github.event_name == 'push' || inputs.platforms == 'all' || contains(inputs.platforms, 'tvos'))
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 27.2
+        # App Store Connect rejects uploads built with a beta Xcode; prefer 27.2 (RC or release).
+        run: |
+          ls -d /Applications/Xcode*.app
+          XCODE=$(ls -d /Applications/Xcode_27.2*.app 2>/dev/null | sort -V | tail -n 1)
+          [ -n "$XCODE" ] || XCODE=$(ls -d /Applications/Xcode_27*.app | sort -V | tail -n 1)
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install signing certificate
+        # One fixed Apple Development certificate from secrets, so automatic signing
+        # does not mint a new certificate on every fresh runner (Apple caps them).
+        env:
+          DEV_CERT_P12: ${{ secrets.DEV_CERT_P12 }}
+          DEV_CERT_PASSWORD: ${{ secrets.DEV_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/ci.keychain-db"
+          KPW=$(openssl rand -hex 12)
+          security create-keychain -p "$KPW" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KPW" "$KEYCHAIN"
+          printf '%s' "$DEV_CERT_P12" | base64 --decode > "$RUNNER_TEMP/ci.p12"
+          security import "$RUNNER_TEMP/ci.p12" -P "$DEV_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          rm -f "$RUNNER_TEMP/ci.p12"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KPW" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          security find-identity -v -p codesigning "$KEYCHAIN" | grep -q "Apple Development" || { echo "certificate import failed"; exit 1; }
+          echo "KEYCHAIN_PATH=$KEYCHAIN" >> "$GITHUB_ENV"
+
+      - name: Write API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          echo "KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+          echo "ARCHIVE=$RUNNER_TEMP/YatteeY-tv.xcarchive" >> "$GITHUB_ENV"
+          umask 077
+          printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+
+      - name: Set build number
+        run: |
+          BUILD=$((1000 + GITHUB_RUN_NUMBER))
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*/CURRENT_PROJECT_VERSION = $BUILD/" Yattee.xcodeproj/project.pbxproj
+          echo "Build number $BUILD"
+
+      - name: Archive
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project Yattee.xcodeproj -scheme Yattee -configuration Release \
+            -destination 'generic/platform=tvOS' -archivePath "$ARCHIVE" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
             | tail -n 200
 
       - name: Upload to TestFlight
