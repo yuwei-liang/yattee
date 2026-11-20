@@ -81,7 +81,7 @@ jobs:
             -authenticationKeyPath "$KEY_PATH" \
             -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
             -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
-            | tail -n 200
+            | tee "$RUNNER_TEMP/build.log" | tail -n 200 || { grep -E "error:" "$RUNNER_TEMP/build.log" | sort -u | head -40; exit 1; }
 
       - name: Upload to TestFlight
         run: |
@@ -179,7 +179,7 @@ jobs:
             -project Yattee.xcodeproj -scheme Yattee -configuration Release \
             -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" \
             CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- PROVISIONING_PROFILE_SPECIFIER= \
-            | tail -n 200
+            | tee "$RUNNER_TEMP/build.log" | tail -n 200 || { grep -E "error:" "$RUNNER_TEMP/build.log" | sort -u | head -40; exit 1; }
 
       - name: Upload to TestFlight
         run: |
@@ -277,7 +277,7 @@ jobs:
             -project Yattee.xcodeproj -scheme Yattee -configuration Release \
             -destination 'generic/platform=tvOS' -archivePath "$ARCHIVE" \
             CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- PROVISIONING_PROFILE_SPECIFIER= AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            | tail -n 200
+            | tee "$RUNNER_TEMP/build.log" | tail -n 200 || { grep -E "error:" "$RUNNER_TEMP/build.log" | sort -u | head -40; exit 1; }
 
       - name: Upload to TestFlight
         run: |
