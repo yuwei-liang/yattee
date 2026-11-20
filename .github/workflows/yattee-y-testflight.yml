@@ -269,15 +269,14 @@ jobs:
           echo "Build number $BUILD"
 
       - name: Archive
+        # Ad-hoc signed here: a development-signed archive needs a registered Apple TV, and
+        # the team has none. The export below re-signs with distribution identities.
         run: |
           set -o pipefail
           xcodebuild archive \
             -project Yattee.xcodeproj -scheme Yattee -configuration Release \
             -destination 'generic/platform=tvOS' -archivePath "$ARCHIVE" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$KEY_PATH" \
-            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
-            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- PROVISIONING_PROFILE_SPECIFIER= AD_HOC_CODE_SIGNING_ALLOWED=YES \
             | tail -n 200
 
       - name: Upload to TestFlight
