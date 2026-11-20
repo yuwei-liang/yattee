@@ -196,9 +196,15 @@ extension SettingsManager {
     var syncInstances: Bool {
         get {
             if let cached = _syncInstances { return cached }
-            // Default to true if not set (for backwards compatibility)
+            // Default to true if not set (for backwards compatibility).
+            // Yattee Y: off on Apple TV, which reaches the server on the LAN while
+            // phones use a remote address; a synced source list makes them fight.
             if localDefaults.object(forKey: "syncInstances") == nil {
+                #if os(tvOS)
+                return false
+                #else
                 return true
+                #endif
             }
             return localDefaults.bool(forKey: "syncInstances")
         }
@@ -316,7 +322,9 @@ extension SettingsManager {
 
     /// Enables all sync categories. Called when enabling iCloud sync for the first time.
     func enableAllSyncCategories() {
+        #if !os(tvOS)
         syncInstances = true
+        #endif
         syncSubscriptions = true
         syncBookmarks = true
         syncPlaybackHistory = true
