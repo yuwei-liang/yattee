@@ -187,7 +187,7 @@ struct RecommendedFeedSection: View {
     private func feedCard(video: Video, index: Int) -> some View {
         let list = visibleVideos
         return VStack(alignment: .leading, spacing: 6) {
-            VideoCardView(video: video)
+            VideoCardView(video: video, reservesTitleSpace: usesGrid)
                 .tappableVideo(
                     video,
                     customActions: cardMenuActions(for: video),
@@ -233,6 +233,8 @@ struct RecommendedFeedSection: View {
                 #endif
             }
         }
+        // One column: extra room after each card's reason row, so the row clearly belongs to the card above.
+        .padding(.bottom, usesGrid ? 0 : 14)
     }
 
     private func dismissedCard(video: Video, state: DismissState) -> some View {

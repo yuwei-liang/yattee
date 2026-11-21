@@ -24,6 +24,8 @@ struct VideoCardView: View {
     var customMetadata: String? = nil
     /// Custom duration text to show on thumbnail (e.g., remaining time). If nil, uses video.formattedDuration.
     var customDuration: String? = nil
+    /// Reserve three title lines so cards in a grid row line up. Yattee Y: one-column lists turn it off.
+    var reservesTitleSpace: Bool = true
 
     // Platform-specific fonts
     #if os(tvOS)
@@ -89,7 +91,7 @@ struct VideoCardView: View {
                 .fontWeight(.medium)
                 .lineLimit(3)
                 .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, minHeight: 60, alignment: .topLeading)
+                .frame(maxWidth: .infinity, minHeight: reservesTitleSpace ? 60 : nil, alignment: .topLeading)
 
             Text(video.author.name)
                 .lineLimit(1)
