@@ -150,3 +150,61 @@ extension ContentService {
         try await yatteeServerAPI(for: instance).recommendationNote(instance: instance)
     }
 }
+
+// MARK: - Wishes ("跟推荐说一句")
+
+/// Something the viewer told the feed in their own words.
+struct FeedWish: Decodable, Sendable, Identifiable, Equatable {
+    let id: String
+    let text: String
+    let ts: Double
+    /// Epoch seconds; nil keeps the wish until removed.
+    let until: Double?
+    /// When a curated round first used it; nil while it waits for the next update.
+    let used: Double?
+    /// What the last round did about it, e.g. 「前面放了4部纪录片」.
+    let result: String
+}
+
+struct FeedWishesStatus: Decodable, Sendable, Equatable {
+    let wishes: [FeedWish]
+    /// Epoch seconds of the next scheduled update.
+    let nextUpdate: Double
+    /// Watches that would bring the next update forward.
+    let watchesToUpdate: Int
+    let rebuilding: Bool
+}
+
+private struct FeedWishesBody: Encodable, Sendable {
+    let texts: [String]
+    let until: Double?
+}
+
+extension YatteeServerAPI {
+    func feedWishes(instance: Instance) async throws -> FeedWishesStatus {
+        try await httpClient.fetch(GenericEndpoint.get("/api/v1/recommended/wishes"), baseURL: instance.url)
+    }
+
+    func addFeedWishes(_ texts: [String], until: Date?, instance: Instance) async throws -> FeedWishesStatus {
+        let body = FeedWishesBody(texts: texts, until: until?.timeIntervalSince1970)
+        return try await httpClient.fetch(GenericEndpoint.post("/api/v1/recommended/wishes", body: body), baseURL: instance.url)
+    }
+
+    func removeFeedWish(id: String, instance: Instance) async throws -> FeedWishesStatus {
+        try await httpClient.fetch(GenericEndpoint.delete("/api/v1/recommended/wishes/\(id)"), baseURL: instance.url)
+    }
+}
+
+extension ContentService {
+    func feedWishes(instance: Instance) async throws -> FeedWishesStatus {
+        try await yatteeServerAPI(for: instance).feedWishes(instance: instance)
+    }
+
+    func addFeedWishes(_ texts: [String], until: Date?, instance: Instance) async throws -> FeedWishesStatus {
+        try await yatteeServerAPI(for: instance).addFeedWishes(texts, until: until, instance: instance)
+    }
+
+    func removeFeedWish(id: String, instance: Instance) async throws -> FeedWishesStatus {
+        try await yatteeServerAPI(for: instance).removeFeedWish(id: id, instance: instance)
+    }
+}

@@ -22,6 +22,7 @@ The goal of the home feed, in the owner's words: **learn and grow, and enjoy it,
 - **After-watch rating:** when a longer video ends, a bar offers 爽 (fun), 涨知识 (learned something), 被带节奏了 (felt manipulated) and 一般 (meh). It closes by itself if ignored and backs off after repeated ignores. "Felt manipulated" can also mean fewer videos from that channel, or send the video to unspin. Every watch also reports how much of the video was watched, so the recommender learns from finished watches rather than clicks.
 - The feed's header says what the last round changed because of your feedback.
 - **Bring videos over from YouTube:** share a YouTube video to Yattee Y to play it now or save it for later without leaving YouTube; a copied link offers a one-tap paste; on the Mac, two bookmarklets (`scripts/yattee-y-bookmarklets.html`). Saved videos form a home row, kept on the server so phone, Mac and TV share it, and count as strong taste signals for the feed.
+- **Tell the feed what you want:** say it in plain words ("a few documentaries", "fewer games"), for today, this week or for good. Use it at the next update for free, or rebuild now. Each wish shows what the last round did about it.
 - Numbered series (#3, Game 3, 第3局…): the next episode is pinned first in Related and on home.
 - **unspin:** send a video from its menu for an analysis of how its argument is built; reports are listed in the app.
 

@@ -25,6 +25,10 @@ struct RecommendedFeedSection: View {
     /// Videos the viewer dismissed, waiting out the undo window or showing reasons.
     @State private var dismissed: [String: DismissState] = [:]
     @State private var pendingSends: [String: Task<Void, Never>] = [:]
+    /// 「跟推荐说一句」: what the viewer asked for, and the panel.
+    @State private var wishStatus: FeedWishesStatus?
+    @State private var showingWishSheet = false
+    @State private var rebuildingForWish = false
 
     private enum DismissState { case undoable, thanked }
 
@@ -62,6 +66,9 @@ struct RecommendedFeedSection: View {
         .padding(.bottom, 24)
         #endif
         .task { if videos.isEmpty { await load() } }
+        .sheet(isPresented: $showingWishSheet) {
+            FeedWishSheet(status: wishStatus, remove: removeWish, submit: submitWishes)
+        }
     }
 
     // MARK: - Pieces
@@ -110,12 +117,45 @@ struct RecommendedFeedSection: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("推荐")
                     .font(.title2.bold())
+                Button {
+                    showingWishSheet = true
+                } label: {
+                    Label("说一句", systemImage: "square.and.pencil")
+                        .font(.subheadline.weight(.medium))
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .tint(.purple)
+                .disabled(server == nil)
                 Spacer()
                 if !videos.isEmpty {
                     Text("Claude 为你挑的 \(visibleVideos.count) 条")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+            }
+            if rebuildingForWish {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("正在按你说的重挑，大约一分钟…")
+                        .font(.subheadline)
+                        .foregroundStyle(.purple)
+                }
+                .padding(.vertical, 4)
+            }
+            if let wishes = wishStatus?.wishes, !wishes.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(wishes.prefix(3)) { wish in
+                        FeedWishRow(wish: wish) { removeWish(wish) }
+                    }
+                    if wishes.count > 3 {
+                        Button("还有 \(wishes.count - 3) 句") { showingWishSheet = true }
+                            .font(.caption)
+                    }
+                }
+                #if !os(tvOS)
+                .frame(maxWidth: usesGrid ? 560 : .infinity, alignment: .leading)
+                #endif
             }
             if !note.isEmpty {
                 Label(note, systemImage: "checkmark.bubble")
@@ -282,6 +322,7 @@ struct RecommendedFeedSection: View {
             let list = try await appEnvironment.contentService.popular(for: server)
             videos = list
             note = (try? await appEnvironment.contentService.recommendationNote(instance: server)) ?? ""
+            wishStatus = try? await appEnvironment.contentService.feedWishes(instance: server)
             dismissed = [:]
             loadError = nil
         } catch {
@@ -298,6 +339,46 @@ struct RecommendedFeedSection: View {
             await load()
         } catch {
             _ = appEnvironment.toastManager.showError("换一批失败", subtitle: error.localizedDescription)
+        }
+    }
+
+    // MARK: - Wishes
+
+    private func removeWish(_ wish: FeedWish) {
+        guard let server, let appEnvironment else { return }
+        Task {
+            do {
+                let status = try await appEnvironment.contentService.removeFeedWish(id: wish.id, instance: server)
+                withAnimation { wishStatus = status }
+            } catch {
+                _ = appEnvironment.toastManager.showError("没撤回成功", subtitle: error.localizedDescription)
+            }
+        }
+    }
+
+    private func submitWishes(_ texts: [String], until: Date?, now: Bool) {
+        guard let server, let appEnvironment else { return }
+        Task {
+            do {
+                let status = try await appEnvironment.contentService.addFeedWishes(texts, until: until, instance: server)
+                withAnimation { wishStatus = status }
+                guard now else {
+                    _ = appEnvironment.toastManager.showSuccess("记下了", subtitle: "下次更新时用，\(status.nextUpdateLabel)")
+                    return
+                }
+                let newIDs = Set(status.wishes.filter { $0.used == nil }.map(\.id))
+                rebuildingForWish = true
+                defer { rebuildingForWish = false }
+                _ = try await appEnvironment.contentService.rebuildRecommendations(instance: server)
+                await load()
+                let unused = wishStatus?.wishes.contains { newIDs.contains($0.id) && $0.used == nil } ?? false
+                if unused {
+                    _ = appEnvironment.toastManager.showError("这次没用上", subtitle: "可能今天的重挑次数用完了，会在下次更新时用")
+                }
+            } catch {
+                rebuildingForWish = false
+                _ = appEnvironment.toastManager.showError("没发出去", subtitle: error.localizedDescription)
+            }
         }
     }
 
