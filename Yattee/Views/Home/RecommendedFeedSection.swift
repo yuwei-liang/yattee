@@ -29,6 +29,9 @@ struct RecommendedFeedSection: View {
     @State private var wishStatus: FeedWishesStatus?
     @State private var showingWishSheet = false
     @State private var rebuildingForWish = false
+    /// The ⋯ menu's 「已下载」 item asks before deleting.
+    @State private var showingDeleteDownloadConfirmation = false
+    @State private var downloadToDelete: Download?
 
     private enum DismissState { case undoable, thanked }
 
@@ -69,6 +72,18 @@ struct RecommendedFeedSection: View {
         .sheet(isPresented: $showingWishSheet) {
             FeedWishSheet(status: wishStatus, remove: removeWish, submit: submitWishes)
         }
+        #if !os(tvOS)
+        .alert(String(localized: "videoInfo.download.remove.title"), isPresented: $showingDeleteDownloadConfirmation) {
+            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(String(localized: "videoInfo.download.remove.confirm"), role: .destructive) {
+                if let download = downloadToDelete {
+                    Task { await appEnvironment?.downloadManager.delete(download) }
+                }
+            }
+        } message: {
+            Text(String(localized: "videoInfo.download.remove.message"))
+        }
+        #endif
     }
 
     // MARK: - Pieces
@@ -211,12 +226,15 @@ struct RecommendedFeedSection: View {
                 }
                 Spacer(minLength: 0)
                 #if !os(tvOS)
+                // Same items as the long-press menu: feedback first, then the app's usual video actions.
                 Menu {
-                    ForEach(Array(menuActions(for: video).enumerated()), id: \.offset) { _, action in
-                        Button(role: action.role, action: action.action) {
-                            Label(action.label, systemImage: action.systemImage)
-                        }
-                    }
+                    VideoContextMenuContent(
+                        video: video,
+                        customActions: feedbackActions(for: video),
+                        showingDeleteDownloadConfirmation: $showingDeleteDownloadConfirmation,
+                        downloadToDelete: $downloadToDelete,
+                        appEnvironment: appEnvironment
+                    )
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.body.weight(.semibold))
