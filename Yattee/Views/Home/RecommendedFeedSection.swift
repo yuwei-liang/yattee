@@ -355,11 +355,24 @@ struct RecommendedFeedSection: View {
         isRebuilding = true
         defer { isRebuilding = false }
         do {
-            _ = try await appEnvironment.contentService.rebuildRecommendations(instance: server)
-            await load()
+            try await runRebuild(on: server, appEnvironment: appEnvironment)
         } catch {
             _ = appEnvironment.toastManager.showError("换一批失败", subtitle: error.localizedDescription)
         }
+    }
+
+    /// Starts a rebuild on the server, waits for it by polling (up to five minutes), then reloads the feed.
+    private func runRebuild(on server: Instance, appEnvironment: AppEnvironment) async throws {
+        try await appEnvironment.contentService.startRecommendationRebuild(instance: server)
+        let deadline = Date().addingTimeInterval(300)
+        while Date() < deadline {
+            try? await Task.sleep(for: .seconds(4))
+            // A failed poll (flaky network) just means "ask again".
+            if let status = try? await appEnvironment.contentService.feedWishes(instance: server), !status.rebuilding {
+                break
+            }
+        }
+        await load()
     }
 
     // MARK: - Wishes
@@ -383,14 +396,13 @@ struct RecommendedFeedSection: View {
                 let status = try await appEnvironment.contentService.addFeedWishes(texts, until: until, instance: server)
                 withAnimation { wishStatus = status }
                 guard now else {
-                    _ = appEnvironment.toastManager.showSuccess("记下了", subtitle: "下次更新时用，\(status.nextUpdateLabel)")
+                    _ = appEnvironment.toastManager.showSuccess("记下了", subtitle: "下次更新时用：\(status.nextUpdateLabel)\(status.sooner)")
                     return
                 }
                 let newIDs = Set(status.wishes.filter { $0.used == nil }.map(\.id))
                 rebuildingForWish = true
                 defer { rebuildingForWish = false }
-                _ = try await appEnvironment.contentService.rebuildRecommendations(instance: server)
-                await load()
+                try await runRebuild(on: server, appEnvironment: appEnvironment)
                 let unused = wishStatus?.wishes.contains { newIDs.contains($0.id) && $0.used == nil } ?? false
                 if unused {
                     _ = appEnvironment.toastManager.showError("这次没用上", subtitle: "可能今天的重挑次数用完了，会在下次更新时用")

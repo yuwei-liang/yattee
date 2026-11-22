@@ -175,6 +175,10 @@ struct FeedWishesStatus: Decodable, Sendable, Equatable {
     let rebuilding: Bool
 }
 
+private struct RebuildStartResponse: Decodable, Sendable {
+    let started: Bool
+}
+
 private struct FeedWishesBody: Encodable, Sendable {
     let texts: [String]
     let until: Double?
@@ -193,6 +197,13 @@ extension YatteeServerAPI {
     func removeFeedWish(id: String, instance: Instance) async throws -> FeedWishesStatus {
         try await httpClient.fetch(GenericEndpoint.delete("/api/v1/recommended/wishes/\(id)"), baseURL: instance.url)
     }
+
+    /// Starts a rebuild on the server and returns at once (a curated round takes a minute or two,
+    /// longer than a request should wait). Poll `feedWishes` until `rebuilding` is false.
+    func startRecommendationRebuild(instance: Instance) async throws {
+        let _: RebuildStartResponse = try await httpClient.fetch(
+            GenericEndpoint.post("/api/v1/recommended/rebuild-async"), baseURL: instance.url)
+    }
 }
 
 extension ContentService {
@@ -206,5 +217,9 @@ extension ContentService {
 
     func removeFeedWish(id: String, instance: Instance) async throws -> FeedWishesStatus {
         try await yatteeServerAPI(for: instance).removeFeedWish(id: id, instance: instance)
+    }
+
+    func startRecommendationRebuild(instance: Instance) async throws {
+        try await yatteeServerAPI(for: instance).startRecommendationRebuild(instance: instance)
     }
 }

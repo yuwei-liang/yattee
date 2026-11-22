@@ -58,6 +58,11 @@ extension FeedWishesStatus {
         if hours < 1 { return "1 小时内" }
         return "约 \(Int(hours.rounded())) 小时后"
     }
+
+    /// 「或再看 3 个视频」: watching more brings the next update forward.
+    var sooner: String {
+        watchesToUpdate > 0 ? "，或再看 \(watchesToUpdate) 个视频" : ""
+    }
 }
 
 /// One wish on the feed: what they said, how long it lasts, what the last round did, and ✕.
@@ -218,7 +223,9 @@ struct FeedWishSheet: View {
             } label: {
                 VStack(spacing: 2) {
                     Text("下次更新时用").font(.headline)
-                    Text("免费 · \(status?.nextUpdateLabel ?? "几小时内")").font(.caption2)
+                    Text("免费 · \(status?.nextUpdateLabel ?? "几小时内")\(status?.sooner ?? "")")
+                        .font(.caption2)
+                        .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, minHeight: 44)
             }
