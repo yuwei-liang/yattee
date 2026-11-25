@@ -42,6 +42,7 @@ struct HomeView: View {
     @State private var showingCustomizeHome = false
     #if !os(tvOS)
     @State private var showingUnspinReports = false   // Yattee Y
+    @State private var feedRefreshToken = 0   // Yattee Y: pull-to-refresh reloads the feed
     @State private var unspinActiveCount = 0          // Yattee Y
     #endif
     @State private var channelsCount: Int = 0
@@ -454,6 +455,14 @@ struct HomeView: View {
                         homeContent
                     }
                 }
+                #if os(iOS)
+                // Yattee Y: pull down to fetch the recommendation list again (no Claude round).
+                .refreshable {
+                    feedRefreshToken += 1
+                    await refreshUnspinCount()
+                    try? await Task.sleep(for: .milliseconds(800))
+                }
+                #endif
             )
         #endif
     }
@@ -523,7 +532,7 @@ struct HomeView: View {
 
         YouTubePicksSection()
 
-        RecommendedFeedSection()
+        RecommendedFeedSection(refreshToken: feedRefreshToken)
             .sheet(isPresented: $showingUnspinReports, onDismiss: { Task { await refreshUnspinCount() } }) {
                 UnspinReportsView()
             }

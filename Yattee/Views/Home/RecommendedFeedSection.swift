@@ -12,6 +12,8 @@ import SwiftUI
 
 struct RecommendedFeedSection: View {
     @Environment(\.appEnvironment) private var appEnvironment
+    /// Bumped by the home page's pull-to-refresh; any change reloads the list (free: no Claude round).
+    var refreshToken = 0
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     #endif
@@ -32,6 +34,8 @@ struct RecommendedFeedSection: View {
     /// The ⋯ menu's 「已下载」 item asks before deleting.
     @State private var showingDeleteDownloadConfirmation = false
     @State private var downloadToDelete: Download?
+    /// Which server + refresh the shown list came from, so switching sources reloads it.
+    @State private var loadedKey: String?
 
     private enum DismissState { case undoable, thanked }
 
@@ -40,6 +44,10 @@ struct RecommendedFeedSection: View {
 
     private var server: Instance? {
         appEnvironment?.instancesManager.enabledYatteeServerInstances.first
+    }
+
+    private var reloadKey: String {
+        "\(server?.id.uuidString ?? "none")#\(refreshToken)"
     }
 
     private var visibleVideos: [Video] {
@@ -68,7 +76,9 @@ struct RecommendedFeedSection: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 24)
         #endif
-        .task { if videos.isEmpty { await load() } }
+        .task(id: reloadKey) {
+            if videos.isEmpty || loadedKey != reloadKey { await load() }
+        }
         .sheet(isPresented: $showingWishSheet) {
             FeedWishSheet(status: wishStatus, remove: removeWish, submit: submitWishes)
         }
@@ -148,6 +158,25 @@ struct RecommendedFeedSection: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                Button {
+                    Task { await load() }
+                } label: {
+                    if isLoading {
+                        ProgressView()
+                            #if !os(tvOS)
+                            .controlSize(.small)
+                            #endif
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.subheadline)
+                    }
+                }
+                #if !os(tvOS)
+                .buttonStyle(.borderless)
+                #endif
+                .disabled(server == nil || isLoading)
+                .accessibilityLabel("刷新推荐列表")
+                .help("重新取一次推荐列表（不会让 Claude 重挑）")
             }
             if rebuildingForWish {
                 HStack(spacing: 10) {
@@ -336,11 +365,13 @@ struct RecommendedFeedSection: View {
             loadError = "没有启用的 Yattee Server 源。"
             return
         }
+        let key = reloadKey
         isLoading = true
         defer { isLoading = false }
         do {
             let list = try await appEnvironment.contentService.popular(for: server)
             videos = list
+            loadedKey = key
             note = (try? await appEnvironment.contentService.recommendationNote(instance: server)) ?? ""
             wishStatus = try? await appEnvironment.contentService.feedWishes(instance: server)
             dismissed = [:]
