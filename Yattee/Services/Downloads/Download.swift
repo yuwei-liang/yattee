@@ -26,10 +26,10 @@ struct Download: Identifiable, Codable, Sendable, Equatable {
     let dislikeCount: Int?
     let publishedAt: Date?
     let publishedText: String?
-    let streamURL: URL
+    var streamURL: URL
 
     /// Optional separate audio stream URL (for video-only streams)
-    let audioStreamURL: URL?
+    var audioStreamURL: URL?
     /// Optional caption URL for subtitle download
     let captionURL: URL?
     /// Language code for the audio track (e.g., "en", "ja")

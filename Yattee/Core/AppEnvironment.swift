@@ -457,6 +457,11 @@ final class AppEnvironment {
         player.setToastManager(toast)
         self.downloadManager.setToastManager(toast)
         self.downloadManager.setDownloadSettings(self.downloadSettings)
+        #if !os(tvOS)
+        // Yattee Y: download retries fetch fresh URLs from the Yattee Server in use now.
+        self.downloadManager.instancesManager = self.instancesManager
+        self.downloadManager.contentService = self.contentService
+        #endif
 
         // Initialize Handoff Manager
         let handoff = HandoffManager()

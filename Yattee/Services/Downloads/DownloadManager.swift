@@ -63,6 +63,9 @@ final class DownloadManager: NSObject {
     let minimumValidFileSize: Int64 = 1024  // 1 KB
 
     var urlSession: URLSession!
+    /// Yattee Y: where a retry fetches fresh stream URLs (the server in use now).
+    weak var instancesManager: InstancesManager?
+    var contentService: ContentService?
     /// Callers waiting for a replaced background session to finish invalidating,
     /// keyed by session. A new session with the same identifier must not be
     /// created while the old one is still alive.
@@ -359,6 +362,34 @@ final class DownloadManager: NSObject {
             audioBitrate: audioBitrate,
             suppressStartToast: suppressStartToast
         )
+    }
+
+    /// Yattee Y: fresh stream URLs for a download from the Yattee Server in use now, so a
+    /// retry doesn't keep hammering an expired URL or a server that is far away or asleep
+    /// (e.g. queued via the home NAS, now travelling with a closer server). Nil when the
+    /// same stream can't be found; the retry then uses the old URLs.
+    func freshStreamURLs(for download: Download) async -> (video: URL, audio: URL?)? {
+        guard case .global(_) = download.videoID.source,
+              let instancesManager, let contentService,
+              let instance = instancesManager.instance(for: download.videoID.source),
+              let result = try? await contentService.videoWithProxyStreamsAndCaptionsAndStoryboards(
+                id: download.videoID.videoID, instance: instance
+              ) else { return nil }
+        let streams = result.streams
+        if download.quality == "audio" {
+            let audio = streams.filter { $0.isAudioOnly && $0.format == download.formatID }
+            guard let pick = selectBestAudioStream(from: audio, preferredLanguage: download.audioLanguage) else { return nil }
+            return (pick.url, nil)
+        }
+        guard let video = streams.first(where: {
+            !$0.isAudioOnly && $0.qualityLabel == download.quality && $0.format == download.formatID
+        }) else { return nil }
+        var audioURL: URL?
+        if download.audioStreamURL != nil {
+            guard let audio = selectBestAudioStream(from: streams, preferredLanguage: download.audioLanguage) else { return nil }
+            audioURL = audio.url
+        }
+        return (video.url, audioURL)
     }
 
     /// Yattee Y: download only the sound (for listening on the road; about a tenth of the space).

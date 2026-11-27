@@ -53,7 +53,9 @@ final class ConnectivityMonitor: @unchecked Sendable {
                     NotificationCenter.default.post(name: .connectivityDidReturn, object: nil)
                 }
 
-                self?.isCellular = path.usesInterfaceType(.cellular)
+                // On Wi‑Fi with a VPN (Tailscale) or Wi‑Fi Assist the path can list
+                // cellular too; only call it cellular when Wi‑Fi isn't in use.
+                self?.isCellular = path.usesInterfaceType(.cellular) && !path.usesInterfaceType(.wifi)
                 self?.isExpensive = path.isExpensive
                 self?.isConstrained = path.isConstrained
             }

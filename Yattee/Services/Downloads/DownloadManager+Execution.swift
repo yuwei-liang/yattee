@@ -846,7 +846,22 @@ extension DownloadManager {
                     return
                 }
 
-                let currentDownload = activeDownloads[currentIndex]
+                var currentDownload = activeDownloads[currentIndex]
+
+                // Yattee Y: starting the phase over anyway? Get fresh URLs from the server in use now.
+                let hasResume = phase == .video ? currentDownload.resumeData != nil
+                    : phase == .audio ? currentDownload.audioResumeData != nil : true
+                if !hasResume, phase == .video || phase == .audio,
+                   let fresh = await freshStreamURLs(for: currentDownload),
+                   let index = activeDownloads.firstIndex(where: { $0.id == downloadID }) {
+                    activeDownloads[index].streamURL = fresh.video
+                    if fresh.audio != nil { activeDownloads[index].audioStreamURL = fresh.audio }
+                    currentDownload = activeDownloads[index]
+                    LoggingService.shared.logDownload(
+                        "[Downloads] Retry with fresh URLs",
+                        details: fresh.video.host ?? "?"
+                    )
+                }
 
                 // Retry only the failed phase
                 switch phase {
