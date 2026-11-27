@@ -255,6 +255,8 @@ struct RecommendedFeedSection: View {
                 }
                 Spacer(minLength: 0)
                 #if !os(tvOS)
+                // One tap fills the download queue (long-press: sound only), for the road.
+                QuickDownloadButton(video: video)
                 // Same items as the long-press menu: feedback first, then the app's usual video actions.
                 Menu {
                     VideoContextMenuContent(

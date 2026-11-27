@@ -361,6 +361,37 @@ final class DownloadManager: NSObject {
         )
     }
 
+    /// Yattee Y: download only the sound (for listening on the road; about a tenth of the space).
+    /// Prefers an m4a (AAC) track in the preferred language.
+    func autoEnqueueAudioOnly(
+        _ video: Video,
+        preferredAudioLanguage: String?,
+        contentService: ContentService,
+        instance: Instance
+    ) async throws {
+        let result = try await contentService.videoWithProxyStreamsAndCaptionsAndStoryboards(
+            id: video.id.videoID,
+            instance: instance
+        )
+        let audioOnly = result.streams.filter(\.isAudioOnly)
+        let m4a = audioOnly.filter { $0.format == "m4a" || ($0.mimeType ?? "").contains("mp4") }
+        guard let audio = selectBestAudioStream(from: m4a.isEmpty ? audioOnly : m4a,
+                                                preferredLanguage: preferredAudioLanguage) else {
+            throw DownloadError.noStreamAvailable
+        }
+        try await enqueue(
+            result.video,
+            quality: "audio",
+            formatID: audio.format.isEmpty ? "m4a" : audio.format,
+            streamURL: audio.url,
+            audioLanguage: audio.audioLanguage,
+            httpHeaders: audio.httpHeaders,
+            storyboard: result.storyboards.highest(),
+            audioCodec: audio.audioCodec,
+            audioBitrate: audio.bitrate
+        )
+    }
+
     /// Automatically enqueue a media source video (SMB/WebDAV/local) for download.
     /// Unlike autoEnqueue, this doesn't make API calls - it uses the direct file URL.
     ///
