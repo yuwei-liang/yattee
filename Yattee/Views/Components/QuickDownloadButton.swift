@@ -25,9 +25,17 @@ struct QuickDownloadButton: View {
         appEnvironment?.downloadManager.isDownloaded(video.id) ?? false
     }
 
+    private var isPreparing: Bool {
+        appEnvironment?.downloadManager.preparingVideoIDs.contains(video.id) ?? false
+    }
+
+    private var canStart: Bool {
+        download == nil && !isDownloaded && !isPreparing
+    }
+
     var body: some View {
         Menu {
-            if download == nil && !isDownloaded {
+            if canStart {
                 Button {
                     startVideo()
                 } label: {
@@ -38,6 +46,8 @@ struct QuickDownloadButton: View {
                 } label: {
                     Label("只要声音（省空间）", systemImage: "music.note")
                 }
+            } else if isPreparing {
+                Label("正在准备下载…", systemImage: "hourglass")
             } else if isDownloaded {
                 Label("已下载", systemImage: "checkmark.circle.fill")
             } else if let download {
@@ -52,7 +62,7 @@ struct QuickDownloadButton: View {
                 .frame(width: 40, height: 32)
                 .contentShape(Rectangle())
         } primaryAction: {
-            if download == nil && !isDownloaded {
+            if canStart {
                 startVideo()
             }
         }
@@ -70,6 +80,15 @@ struct QuickDownloadButton: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.title3)
                 .foregroundStyle(.green)
+        } else if isPreparing {
+            // Optimistic: reacts on the tap while the streams are being fetched.
+            ZStack {
+                Circle()
+                    .stroke(.tint.opacity(0.35), lineWidth: 2.5)
+                ProgressView()
+                    .controlSize(.mini)
+            }
+            .frame(width: 20, height: 20)
         } else if let download, download.status == .downloading {
             ZStack {
                 Circle()
@@ -97,6 +116,7 @@ struct QuickDownloadButton: View {
 
     private var accessibilityText: String {
         if isDownloaded { return "已下载" }
+        if isPreparing { return "正在准备下载" }
         if let download {
             return download.status == .downloading ? "正在下载 \(Int(download.progress * 100))%" : "在下载队列里"
         }
@@ -111,7 +131,9 @@ struct QuickDownloadButton: View {
             presentAppSheet(.downloadOptions(video))
             return
         }
+        markPreparing(appEnvironment)
         Task {
+            defer { appEnvironment.downloadManager.preparingVideoIDs.remove(video.id) }
             do {
                 try await appEnvironment.downloadManager.autoEnqueue(
                     video,
@@ -131,7 +153,9 @@ struct QuickDownloadButton: View {
     private func startAudio() {
         guard let appEnvironment,
               let instance = appEnvironment.instancesManager.instance(for: video) else { return }
+        markPreparing(appEnvironment)
         Task {
+            defer { appEnvironment.downloadManager.preparingVideoIDs.remove(video.id) }
             do {
                 try await appEnvironment.downloadManager.autoEnqueueAudioOnly(
                     video,
@@ -143,6 +167,13 @@ struct QuickDownloadButton: View {
                 showError(error)
             }
         }
+    }
+
+    private func markPreparing(_ appEnvironment: AppEnvironment) {
+        appEnvironment.downloadManager.preparingVideoIDs.insert(video.id)
+        #if os(iOS)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        #endif
     }
 
     private func showError(_ error: Error) {

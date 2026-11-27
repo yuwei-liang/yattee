@@ -481,7 +481,10 @@ struct VideoContextMenuContent: View {
         // Check if auto-download mode
         if downloadSettings.preferredDownloadQuality != .ask,
            let instance = appEnvironment.instancesManager.instance(for: video) {
+            // Yattee Y: the card's download button shows "preparing" at once.
+            appEnvironment.downloadManager.preparingVideoIDs.insert(video.id)
             Task {
+                defer { appEnvironment.downloadManager.preparingVideoIDs.remove(video.id) }
                 do {
                     try await appEnvironment.downloadManager.autoEnqueue(
                         video,

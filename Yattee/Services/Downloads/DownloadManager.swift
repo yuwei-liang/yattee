@@ -63,6 +63,9 @@ final class DownloadManager: NSObject {
     let minimumValidFileSize: Int64 = 1024  // 1 KB
 
     var urlSession: URLSession!
+    /// Yattee Y: videos whose download was just asked for and whose streams are still being
+    /// fetched (a few seconds), so buttons can react at once instead of looking dead.
+    var preparingVideoIDs: Set<VideoID> = []
     /// Yattee Y: where a retry fetches fresh stream URLs (the server in use now).
     weak var instancesManager: InstancesManager?
     var contentService: ContentService?
