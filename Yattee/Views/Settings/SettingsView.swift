@@ -112,7 +112,7 @@ struct SettingsView: View {
                 .frame(width: 48, height: 48)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            Text(verbatim: "Yattee Y")
+            Text(verbatim: "A玮TV")
                 .font(.callout)
                 .fontWeight(.semibold)
 
@@ -225,7 +225,7 @@ struct SettingsView: View {
                         .frame(width: 200, height: 200)
                         .clipShape(RoundedRectangle(cornerRadius: 46))
 
-                    Text(verbatim: "Yattee Y")
+                    Text(verbatim: "A玮TV")
                         .font(.title2)
                         .fontWeight(.semibold)
 
@@ -368,7 +368,7 @@ struct SettingsView: View {
 
                     Section {
                         VStack(spacing: 4) {
-                            Text(verbatim: "Yattee Y")
+                            Text(verbatim: "A玮TV")
                                 .font(.headline)
                             Text("\(appVersion) (\(buildNumber))")
                                 .font(.subheadline)
