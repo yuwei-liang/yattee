@@ -331,7 +331,8 @@ struct DownloadRowView: View {
                 isActive: download.videoProgress < 1.0,
                 isCompleted: download.videoProgress >= 1.0,
                 isSizeUnknown: download.videoSizeUnknown,
-                downloadedBytes: download.videoDownloadedBytes
+                downloadedBytes: download.videoDownloadedBytes,
+                totalBytes: download.videoTotalBytes
             )
 
             // Audio progress (if applicable)
@@ -343,7 +344,8 @@ struct DownloadRowView: View {
                     isActive: download.audioProgress < 1.0,
                     isCompleted: download.audioProgress >= 1.0,
                     isSizeUnknown: download.audioSizeUnknown,
-                    downloadedBytes: download.audioDownloadedBytes
+                    downloadedBytes: download.audioDownloadedBytes,
+                    totalBytes: download.audioTotalBytes
                 )
             }
 
@@ -370,7 +372,8 @@ struct DownloadRowView: View {
         isActive: Bool,
         isCompleted: Bool,
         isSizeUnknown: Bool = false,
-        downloadedBytes: Int64 = 0
+        downloadedBytes: Int64 = 0,
+        totalBytes: Int64 = 0
     ) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
@@ -384,7 +387,8 @@ struct DownloadRowView: View {
                     .foregroundStyle(.green)
             } else if isSizeUnknown {
                 // Indeterminate: show bytes downloaded instead of percentage
-                Text(formatBytes(downloadedBytes))
+                // (Yattee Y: "等待中" rather than "Zero KB" before anything arrived)
+                Text(downloadedBytes > 0 ? formatBytes(downloadedBytes) : "等待中")
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .fixedSize()
@@ -403,6 +407,14 @@ struct DownloadRowView: View {
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .fixedSize()
+
+                // Yattee Y: how big it is — "12 MB / 208 MB".
+                if totalBytes > 0 {
+                    Text("\(formatBytes(downloadedBytes)) / \(formatBytes(totalBytes))")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .fixedSize()
+                }
 
                 if isActive && speed > 0 {
                     Text(formatSpeed(speed))
