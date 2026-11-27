@@ -782,7 +782,7 @@ extension DownloadManager {
 
     // MARK: - Error Handling
 
-    func handleDownloadError(downloadID: UUID, phase: DownloadPhase, error: Error) {
+    func handleDownloadError(downloadID: UUID, phase: DownloadPhase, error: Error, resumeData: Data? = nil) {
         guard let index = activeDownloads.firstIndex(where: { $0.id == downloadID }) else {
             return
         }
@@ -805,12 +805,13 @@ extension DownloadManager {
         if download.retryCount < maxRetryAttempts {
             activeDownloads[index].retryCount += 1
 
-            // Clear resume data for the failed phase
+            // Keep the failed phase's resume data when the system gave us some
+            // (a dropped connection); otherwise start that phase over.
             switch phase {
             case .video:
-                activeDownloads[index].resumeData = nil
+                activeDownloads[index].resumeData = resumeData
             case .audio:
-                activeDownloads[index].audioResumeData = nil
+                activeDownloads[index].audioResumeData = resumeData
             case .caption, .storyboard, .thumbnail, .complete:
                 break
             }
@@ -854,7 +855,7 @@ extension DownloadManager {
                         downloadID: downloadID,
                         url: currentDownload.streamURL,
                         phase: .video,
-                        resumeData: nil,
+                        resumeData: currentDownload.resumeData,
                         httpHeaders: currentDownload.httpHeaders
                     )
                 case .audio:
@@ -863,7 +864,7 @@ extension DownloadManager {
                             downloadID: downloadID,
                             url: audioURL,
                             phase: .audio,
-                            resumeData: nil,
+                            resumeData: currentDownload.audioResumeData,
                             httpHeaders: currentDownload.httpHeaders
                         )
                     }

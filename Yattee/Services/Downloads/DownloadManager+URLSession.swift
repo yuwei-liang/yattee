@@ -199,9 +199,13 @@ extension DownloadManager: URLSessionDownloadDelegate {
                 return
             }
 
+            // Yattee Y: keep what already arrived, so the retry resumes instead of starting at 0%.
+            let resumeData = nsError.userInfo[NSURLSessionDownloadTaskResumeData] as? Data
             Task { @MainActor in
                 LoggingService.shared.logDownloadError("Download task failed (\(taskInfo.phase))", error: error)
-                self.handleDownloadError(downloadID: taskInfo.downloadID, phase: taskInfo.phase, error: error)
+                self.handleDownloadError(
+                    downloadID: taskInfo.downloadID, phase: taskInfo.phase, error: error, resumeData: resumeData
+                )
             }
         }
     }
