@@ -142,6 +142,7 @@ final class DownloadManager: NSObject {
         // Resume any downloads that were in progress when app was terminated
         Task {
             for download in activeDownloads where download.status == .downloading {
+                await refreshURLsIfStartingOver(download.id)
                 await startDownload(for: download.id)
             }
         }
@@ -390,6 +391,20 @@ final class DownloadManager: NSObject {
             audioURL = audio.url
         }
         return (video.url, audioURL)
+    }
+
+    /// Yattee Y: when a download's video file has to start from scratch (no resume data),
+    /// swap in fresh URLs from the Yattee Server in use now.
+    func refreshURLsIfStartingOver(_ downloadID: UUID) async {
+        guard let download = activeDownloads.first(where: { $0.id == downloadID }),
+              download.resumeData == nil, download.videoProgress < 1,
+              let fresh = await freshStreamURLs(for: download),
+              let index = activeDownloads.firstIndex(where: { $0.id == downloadID }) else { return }
+        activeDownloads[index].streamURL = fresh.video
+        if fresh.audio != nil, activeDownloads[index].audioResumeData == nil {
+            activeDownloads[index].audioStreamURL = fresh.audio
+        }
+        LoggingService.shared.logDownload("[Downloads] Fresh URLs", details: fresh.video.host ?? "?")
     }
 
     /// Yattee Y: download only the sound (for listening on the road; about a tenth of the space).
@@ -827,6 +842,8 @@ final class DownloadManager: NSObject {
         activeDownloads[index].status = .queued
         activeDownloads[index].error = nil
         activeDownloads[index].retryCount = 0  // Reset retry count on manual resume
+        // Yattee Y: nothing to resume from? Start over with URLs from the server in use now.
+        await refreshURLsIfStartingOver(download.id)
         saveDownloads()
 
         LoggingService.shared.logDownload("Resumed: \(download.videoID.id)")
