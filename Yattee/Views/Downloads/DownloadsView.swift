@@ -193,6 +193,29 @@ struct DownloadsView: View {
 
     // MARK: - Sort and Group Menu
 
+    private func sendLogs() async {
+        guard let appEnvironment,
+              let server = appEnvironment.instancesManager.enabledYatteeServerInstances.first else { return }
+        let info = Bundle.main.infoDictionary
+        let version = "\(info?["CFBundleShortVersionString"] as? String ?? "?") (\(info?["CFBundleVersion"] as? String ?? "?"))"
+        #if os(iOS)
+        let device = UIDevice.current.model
+        #else
+        let device = "Mac"
+        #endif
+        do {
+            try await appEnvironment.contentService.uploadDiagnostics(
+                logs: LoggingService.shared.exportLogs(), device: device, version: version, instance: server)
+            appEnvironment.toastManager.show(
+                category: .success, title: "日志已发送", subtitle: "存到了 \(server.displayName)",
+                icon: "checkmark.circle", iconColor: .green)
+        } catch {
+            appEnvironment.toastManager.show(
+                category: .error, title: "日志没发出去", subtitle: error.localizedDescription,
+                icon: "exclamationmark.triangle", iconColor: .red)
+        }
+    }
+
     @ViewBuilder
     private func sortAndGroupMenu(_ settings: DownloadSettings) -> some View {
         Menu {
@@ -232,6 +255,15 @@ struct DownloadsView: View {
                     Label(String(localized: "downloads.groupByChannel"), systemImage: "person.2")
                 }
             }
+
+            // Yattee Y: send the in-app log to our server, for whoever is debugging downloads.
+            Section {
+                Button {
+                    Task { await sendLogs() }
+                } label: {
+                    Label("发日志给 Claude", systemImage: "ladybug")
+                }
+            }
         } label: {
             Label(String(localized: "downloads.sortAndGroup"), systemImage: "line.3.horizontal.decrease.circle")
         }
@@ -245,6 +277,7 @@ struct DownloadsView: View {
 /// Only accesses manager.activeDownloads, so won't re-render when completedDownloads changes.
 /// Generates rows directly for VideoListContainer (no Section wrapper).
 private struct ActiveDownloadsSectionContentView: View {
+    @Environment(\.appEnvironment) private var appEnvironment
     let manager: DownloadManager
     let searchText: String
     let listStyle: VideoListStyle
@@ -290,6 +323,11 @@ private struct ActiveDownloadsSectionContentView: View {
                 .onTapGesture {
                     if download.status == .failed {
                         failedDownloadToShow = download
+                    } else {
+                        #if !os(tvOS)
+                        // Yattee Y: still downloading — play it online meanwhile.
+                        appEnvironment?.playerService.openVideo(manager.video(for: download))
+                        #endif
                     }
                 }
             }

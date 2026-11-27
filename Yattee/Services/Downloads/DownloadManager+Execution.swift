@@ -37,6 +37,15 @@ extension DownloadManager {
             return
         }
 
+        // Yattee Y: queued while another server was in use (the nearby one asleep)? Fetch
+        // its URLs from the server in use now before starting.
+        if let current = instancesManager?.enabledYatteeServerInstances.first?.url.host,
+           videoTasks[downloadID] == nil,
+           let queued = activeDownloads.first(where: { $0.id == downloadID }),
+           queued.streamURL.host != current {
+            await refreshURLsIfStartingOver(downloadID)
+        }
+
         guard let index = activeDownloads.firstIndex(where: { $0.id == downloadID }) else {
             LoggingService.shared.logDownloadError("Download not found in activeDownloads: \(downloadID.uuidString)")
             return

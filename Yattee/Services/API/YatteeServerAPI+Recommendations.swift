@@ -43,6 +43,12 @@ struct WatchReport: Encodable, Sendable {
     let followUp: String?
 }
 
+private struct DiagnosticsBody: Encodable, Sendable {
+    let device: String
+    let version: String
+    let logs: String
+}
+
 private struct OKResponse: Decodable, Sendable {
     let ok: Bool
 }
@@ -68,6 +74,13 @@ extension YatteeServerAPI {
         let endpoint = GenericEndpoint(path: "/api/v1/recommended/rebuild", method: .post, timeout: 300)
         let response: RecommendationRebuildResponse = try await httpClient.fetch(endpoint, baseURL: instance.url)
         return response.results
+    }
+
+    /// Yattee Y: posts the in-app log to the server (data/diagnostics/) for debugging.
+    func uploadDiagnostics(logs: String, device: String, version: String, instance: Instance) async throws {
+        let body = DiagnosticsBody(device: device, version: version, logs: logs)
+        let _: OKResponse = try await httpClient.fetch(
+            GenericEndpoint.post("/api/v1/diagnostics", body: body), baseURL: instance.url)
     }
 
     func sendWatchReport(_ report: WatchReport, instance: Instance) async throws {
@@ -221,5 +234,9 @@ extension ContentService {
 
     func startRecommendationRebuild(instance: Instance) async throws {
         try await yatteeServerAPI(for: instance).startRecommendationRebuild(instance: instance)
+    }
+
+    func uploadDiagnostics(logs: String, device: String, version: String, instance: Instance) async throws {
+        try await yatteeServerAPI(for: instance).uploadDiagnostics(logs: logs, device: device, version: version, instance: instance)
     }
 }

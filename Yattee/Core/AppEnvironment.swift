@@ -148,6 +148,8 @@ final class AppEnvironment {
         navigationCoordinator: NavigationCoordinator? = nil,
         downloadManager: DownloadManager? = nil
     ) {
+        // Yattee Y: logging on by default (see LoggingService), before anything reads the flag.
+        UserDefaults.standard.register(defaults: ["loggingEnabled": true])
         let client = httpClient ?? HTTPClient()
         self.httpClient = client
 

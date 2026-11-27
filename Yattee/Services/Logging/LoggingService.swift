@@ -105,7 +105,9 @@ final class LoggingService: Sendable {
     /// Shared singleton instance accessible from any isolation context.
     /// Safe because instance logging methods are nonisolated (thread-safe via Task dispatch to MainActor).
     nonisolated static let shared: LoggingService = {
-        MainActor.assumeIsolated {
+        // Yattee Y: logging is on unless turned off, so 「发日志给 Claude」 has something to send.
+        UserDefaults.standard.register(defaults: ["loggingEnabled": true])
+        return MainActor.assumeIsolated {
             LoggingService()
         }
     }()

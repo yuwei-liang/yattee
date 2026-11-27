@@ -397,12 +397,19 @@ final class DownloadManager: NSObject {
     /// swap in fresh URLs from the Yattee Server in use now.
     func refreshURLsIfStartingOver(_ downloadID: UUID) async {
         guard let download = activeDownloads.first(where: { $0.id == downloadID }),
-              download.resumeData == nil, download.videoProgress < 1,
+              download.videoProgress < 1 else { return }
+        // Its URLs point at a different server than the one in use now (e.g. queued while
+        // the nearby one was asleep): starting over there beats resuming over the slow one.
+        let current = instancesManager?.enabledYatteeServerInstances.first?.url.host
+        let onOtherServer = current != nil && download.streamURL.host != current
+        guard download.resumeData == nil || onOtherServer,
               let fresh = await freshStreamURLs(for: download),
               let index = activeDownloads.firstIndex(where: { $0.id == downloadID }) else { return }
         activeDownloads[index].streamURL = fresh.video
-        if fresh.audio != nil, activeDownloads[index].audioResumeData == nil {
+        activeDownloads[index].resumeData = nil
+        if fresh.audio != nil, activeDownloads[index].audioProgress < 1 {
             activeDownloads[index].audioStreamURL = fresh.audio
+            activeDownloads[index].audioResumeData = nil
         }
         LoggingService.shared.logDownload("[Downloads] Fresh URLs", details: fresh.video.host ?? "?")
     }
@@ -1041,17 +1048,9 @@ final class DownloadManager: NSObject {
     /// Creates a Video and Stream for playing a downloaded video.
     /// Returns nil if the download doesn't have a valid local file.
     /// Also returns the stored dislike count, audio stream, and caption URL if available.
-    func videoAndStream(for download: Download) -> (video: Video, stream: Stream, audioStream: Stream?, captionURL: URL?, dislikeCount: Int?)? {
-        guard let fileURL = resolveLocalURL(for: download) else {
-            LoggingService.shared.warning("[Downloads] resolveLocalURL returned nil for \(download.videoID), localVideoPath=\(download.localVideoPath ?? "nil")", category: .downloads)
-            return nil
-        }
-        guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            LoggingService.shared.warning("[Downloads] Local file does not exist at \(fileURL.path) for \(download.videoID)", category: .downloads)
-            return nil
-        }
-
-        let video = Video(
+    /// Yattee Y: the download's video for playing it online while the file is still coming.
+    func video(for download: Download) -> Video {
+        Video(
             id: download.videoID,
             title: download.title,
             description: download.description,
@@ -1071,6 +1070,19 @@ final class DownloadManager: NSObject {
             isUpcoming: false,
             scheduledStartTime: nil
         )
+    }
+
+    func videoAndStream(for download: Download) -> (video: Video, stream: Stream, audioStream: Stream?, captionURL: URL?, dislikeCount: Int?)? {
+        guard let fileURL = resolveLocalURL(for: download) else {
+            LoggingService.shared.warning("[Downloads] resolveLocalURL returned nil for \(download.videoID), localVideoPath=\(download.localVideoPath ?? "nil")", category: .downloads)
+            return nil
+        }
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            LoggingService.shared.warning("[Downloads] Local file does not exist at \(fileURL.path) for \(download.videoID)", category: .downloads)
+            return nil
+        }
+
+        let video = video(for: download)
 
         // Determine video format from file extension
         let format = fileURL.pathExtension.isEmpty ? "mp4" : fileURL.pathExtension
