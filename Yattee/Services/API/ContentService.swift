@@ -557,12 +557,15 @@ actor ContentService: ContentServiceProtocol {
         }
     }
 
-    /// Fetches video details + streams for downloads. For Yattee Server this routes
-    /// through `/proxy/fast/`, which caches the file on disk on the server.
+    /// Fetches video details + streams for downloads. Yattee Y: for Yattee Server this
+    /// uses the `/proxy/relay` byte-relay, which sends Content-Length, ETag/Last-Modified
+    /// and honours Range, so a dropped download resumes where it stopped. (`/proxy/fast/`
+    /// streams a file while yt-dlp writes it and can't resume, so every drop on a
+    /// slow link restarted the download at 0%.)
     func videoWithProxyStreamsAndCaptionsAndStoryboards(id: String, instance: Instance) async throws -> (video: Video, streams: [Stream], captions: [Caption], storyboards: [Storyboard]) {
         if instance.type == .yatteeServer {
             return try await yatteeServerAPI(for: instance)
-                .videoWithProxyStreamsAndCaptionsAndStoryboards(id: id, instance: instance, mode: .download)
+                .videoWithProxyStreamsAndCaptionsAndStoryboards(id: id, instance: instance, mode: .relay)
         }
         var result = try await videoWithStreamsAndCaptionsAndStoryboards(id: id, instance: instance)
         result.streams = await InvidiousAPI.proxyStreamsIfNeeded(result.streams, instance: instance)
