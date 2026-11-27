@@ -162,6 +162,22 @@ extension DownloadManager: URLSessionDownloadDelegate {
         }
 
         Task { @MainActor in
+            // Yattee Y: a second task for the same download (one the background session
+            // kept across a relaunch, or a retry that raced it) made the progress jump
+            // between two values. Keep the one we track and drop the stray.
+            let tracked: URLSessionDownloadTask? = switch taskInfo.phase {
+            case .video: self.videoTasks[taskInfo.downloadID]
+            case .audio: self.audioTasks[taskInfo.downloadID]
+            default: nil
+            }
+            if let tracked, tracked.taskIdentifier != downloadTask.taskIdentifier {
+                LoggingService.shared.logDownload(
+                    "[Downloads] Cancelled duplicate task (\(taskInfo.phase))",
+                    details: "stray: \(downloadTask.taskIdentifier), kept: \(tracked.taskIdentifier)"
+                )
+                downloadTask.cancel()
+                return
+            }
             self.handleDownloadProgress(
                 downloadID: taskInfo.downloadID,
                 phase: taskInfo.phase,
