@@ -40,6 +40,7 @@ final class InstancesManager {
 
         loadInstances()
         loadActiveInstance()
+        startServerProbing()
 
         // Listen for external changes from iCloud
         NotificationCenter.default.addObserver(
@@ -227,8 +228,81 @@ final class InstancesManager {
         instances.contains { $0.type.accountCapabilities.supportsAccounts }
     }
 
+    /// Enabled Yattee Servers, the one in use first. Yattee Y: with several enabled
+    /// (a laptop on the trip plus the home NAS), the fastest one that answers leads.
     var enabledYatteeServerInstances: [Instance] {
-        yatteeServerInstances.filter(\.isEnabled)
+        var enabled = yatteeServerInstances.filter(\.isEnabled)
+        if enabled.count > 1, let id = preferredYatteeServerID,
+           let index = enabled.firstIndex(where: { $0.id == id }) {
+            enabled.insert(enabled.remove(at: index), at: 0)
+        }
+        return enabled
+    }
+
+    // MARK: - Yattee Y: pick the fastest Yattee Server
+
+    /// The enabled Yattee Server that answered fastest at the last check; nil until checked
+    /// or when only one is enabled.
+    private(set) var preferredYatteeServerID: UUID?
+    private var lastServerProbe: Date?
+    private var serverProbeLoop: Task<Void, Never>?
+
+    /// Checks every enabled Yattee Server's /health and switches to the fastest one that
+    /// answers. Keeps the current one unless it stopped answering or another is clearly
+    /// faster, so the choice doesn't flap.
+    func probeYatteeServers(force: Bool = false) async {
+        let servers = yatteeServerInstances.filter(\.isEnabled)
+        guard servers.count > 1 else {
+            preferredYatteeServerID = nil
+            return
+        }
+        if !force, let last = lastServerProbe, Date().timeIntervalSince(last) < 30 { return }
+        lastServerProbe = Date()
+
+        let times = await withTaskGroup(of: (UUID, TimeInterval?).self) { group in
+            for server in servers {
+                let url = server.url
+                group.addTask { (server.id, await Self.healthTime(of: url)) }
+            }
+            var answered: [UUID: TimeInterval] = [:]
+            for await (id, time) in group {
+                if let time { answered[id] = time }
+            }
+            return answered
+        }
+        guard let best = times.min(by: { $0.value < $1.value }) else { return }
+        if let current = preferredYatteeServerID, let currentTime = times[current],
+           currentTime <= best.value * 1.5 + 0.05 {
+            return
+        }
+        if preferredYatteeServerID != best.key {
+            let name = servers.first { $0.id == best.key }?.displayName ?? "?"
+            LoggingService.shared.info("Yattee Server switched to \(name) (\(Int(best.value * 1000)) ms)", category: .general)
+            preferredYatteeServerID = best.key
+        }
+    }
+
+    /// Re-checks every minute while the app runs (and on returning to the foreground).
+    func startServerProbing() {
+        guard serverProbeLoop == nil else { return }
+        serverProbeLoop = Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.probeYatteeServers(force: true)
+                try? await Task.sleep(for: .seconds(60))
+            }
+        }
+    }
+
+    private nonisolated static func healthTime(of base: URL) async -> TimeInterval? {
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 3
+        config.waitsForConnectivity = false
+        let session = URLSession(configuration: config)
+        defer { session.finishTasksAndInvalidate() }
+        let start = Date()
+        guard let (_, response) = try? await session.data(from: base.appendingPathComponent("health")),
+              (response as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+        return Date().timeIntervalSince(start)
     }
 
     /// Selects an enabled instance appropriate for the given video's content source.
@@ -279,13 +353,13 @@ final class InstancesManager {
                 ?? enabledInstances.first(where: \.isPeerTubeInstance)
         case .extracted:
             // Extracted content requires Yattee Server (yt-dlp)
-            return yatteeServerInstances.first
+            return enabledYatteeServerInstances.first ?? yatteeServerInstances.first
         case .global, .federated:
             // YouTube content - prefer Yattee Server (the active one if it is one),
             // then the active instance, then any other YouTube-capable instance
             let active = activeInstance
             if let active, active.isYatteeServerInstance {
-                return active
+                return enabledYatteeServerInstances.first ?? active
             }
             if let yatteeServer = enabledYatteeServerInstances.first {
                 return yatteeServer

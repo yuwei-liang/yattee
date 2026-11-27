@@ -388,6 +388,22 @@ struct SourcesListView: View {
 
                     if !instance.isEnabled {
                         disabledBadge
+                    } else if instance.isYatteeServerInstance,
+                              let manager = instancesManager,
+                              manager.enabledYatteeServerInstances.count > 1 {
+                        // Yattee Y: several servers on; say which one is in use right now.
+                        if manager.enabledYatteeServerInstances.first?.id == instance.id {
+                            Text("正在使用")
+                                .font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.green.opacity(0.18), in: Capsule())
+                                .foregroundStyle(.green)
+                        } else {
+                            Text("备用")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 

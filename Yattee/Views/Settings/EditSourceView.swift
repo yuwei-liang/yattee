@@ -384,6 +384,10 @@ private struct EditRemoteServerContent: View {
             isPresented: $showingYatteeServerWarning,
             titleVisibility: .visible
         ) {
+            // Yattee Y: several servers can stay on; the app uses the fastest that answers.
+            Button("都开着，自动用更快的") {
+                performSave()
+            }
             Button(String(localized: "sources.yatteeServer.warning.disableOthers"), role: .destructive) {
                 appEnvironment?.instancesManager.disableOtherYatteeServerInstances(except: instance.id)
                 performSave()

@@ -192,6 +192,13 @@ struct AddRemoteServerView: View {
 
     @ViewBuilder
     private var yatteeServerWarningButtons: some View {
+        // Yattee Y: several servers can stay on; the app uses the fastest that answers.
+        Button("都开着，自动用更快的") {
+            if let instance = pendingYatteeServerInstance {
+                appEnvironment?.instancesManager.add(instance)
+                finishAdding()
+            }
+        }
         Button(String(localized: "sources.yatteeServer.warning.disableOthers"), role: .destructive) {
             if let instance = pendingYatteeServerInstance {
                 appEnvironment?.instancesManager.disableOtherYatteeServerInstances(except: instance.id)

@@ -290,6 +290,8 @@ struct YatteeApp: App {
 
             // Handle pending notification navigation and warm cache when becoming active
             if newPhase == .active {
+                // Yattee Y: with several Yattee Servers enabled, use the fastest that answers now.
+                Task { await appEnvironment.instancesManager.probeYatteeServers(force: true) }
                 // Refresh media source password status (Keychain state can change in background)
                 appEnvironment.mediaSourcesManager.refreshPasswordStoredStatus()
                 YouTubePicks.shared.appBecameActive()
@@ -335,6 +337,8 @@ struct YatteeApp: App {
 
             // Handle pending notification navigation and warm cache when becoming active
             if newPhase == .active {
+                // Yattee Y: with several Yattee Servers enabled, use the fastest that answers now.
+                Task { await appEnvironment.instancesManager.probeYatteeServers(force: true) }
                 appEnvironment.notificationManager.handlePendingNavigation(
                     using: appEnvironment.navigationCoordinator
                 )
