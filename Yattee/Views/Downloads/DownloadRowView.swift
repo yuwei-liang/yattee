@@ -408,12 +408,15 @@ struct DownloadRowView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize()
 
-                // Yattee Y: how big it is — "12 MB / 208 MB".
+                // Yattee Y: how big it is — "12 MB / 208 MB". Shrinks or truncates rather
+                // than widening the row (a long line pushed the thumbnail off-screen).
                 if totalBytes > 0 {
                     Text("\(formatBytes(downloadedBytes)) / \(formatBytes(totalBytes))")
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.secondary)
-                        .fixedSize()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .layoutPriority(-1)
                 }
 
                 if isActive && speed > 0 {

@@ -51,6 +51,21 @@ extension DownloadManager {
             return
         }
 
+        // Yattee Y: progress says a stream is done but its file never landed (the task that
+        // finished was dropped). Nothing would restart it and the download never completed,
+        // so fetch that stream again.
+        if activeDownloads[index].videoProgress >= 1, activeDownloads[index].localVideoPath == nil {
+            activeDownloads[index].videoProgress = 0
+            activeDownloads[index].resumeData = nil
+            LoggingService.shared.logDownload("[Downloads] Video marked done without a file; fetching again")
+        }
+        if activeDownloads[index].audioStreamURL != nil, activeDownloads[index].audioProgress >= 1,
+           activeDownloads[index].localAudioPath == nil {
+            activeDownloads[index].audioProgress = 0
+            activeDownloads[index].audioResumeData = nil
+            LoggingService.shared.logDownload("[Downloads] Audio marked done without a file; fetching again")
+        }
+
         let download = activeDownloads[index]
 
         LoggingService.shared.logDownload(
@@ -97,6 +112,14 @@ extension DownloadManager {
         // Start storyboard download if available and not complete
         if download.storyboard != nil, download.storyboardProgress < 1.0 {
             startStoryboardDownload(downloadID: downloadID)
+        }
+
+        // Yattee Y: everything already on disk (e.g. resumed after the last file landed)?
+        // Finish it instead of leaving it in the active list.
+        if download.videoProgress >= 1, download.localVideoPath != nil,
+           download.audioStreamURL == nil || download.localAudioPath != nil,
+           download.storyboard == nil || download.storyboardProgress >= 1 {
+            await checkAndCompleteDownload(downloadID: downloadID)
         }
     }
 
